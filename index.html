@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Oel Ngati Kameie // ¿Quieres ser mi acompañante de aventuras?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Press+Start+2P&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--cyan:#00f2fe;--magenta:#e040fb;--teal:#0df5b7;--pink:#ff2a7a;--gold:#ffe600}
+    *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+    html,body{width:100%;height:100%;overflow:hidden;background:#02050e;color:#fff;font-family:'Outfit',sans-serif}
+    
+    /* Pantalla de Inicio / Desbloqueo de Audio */
+    #start-overlay{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at center,#07152d 0%,#010308 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity 1s,visibility 1s}
+    #start-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+    .seed-icon{width:75px;height:75px;margin-bottom:20px;filter:drop-shadow(0 0 25px var(--cyan));animation:float 3s ease-in-out infinite alternate}
+    @keyframes float{to{transform:translateY(-14px) scale(1.08)}}
+    .start-btn{font-family:'Cinzel',serif;font-size:clamp(14px,2.5vw,18px);letter-spacing:4px;color:#e6f9ff;border:1.5px solid var(--cyan);padding:16px 38px;border-radius:40px;background:rgba(0,242,254,0.12);backdrop-filter:blur(10px);box-shadow:0 0 30px rgba(0,242,254,0.3);cursor:pointer;transition:.3s}
+    .start-btn:hover{background:rgba(0,242,254,0.25);transform:scale(1.05);box-shadow:0 0 45px rgba(0,242,254,0.5)}
+    .start-sub{margin-top:14px;font-size:11px;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+
+    #sound-btn{position:fixed;top:18px;right:18px;z-index:95;background:rgba(4,14,28,0.7);border:1px solid var(--cyan);border-radius:50%;width:42px;height:42px;color:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px)}
+    #click-hint{position:fixed;bottom:45px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,242,254,0.6);z-index:40;pointer-events:none;animation:pulse 2s infinite}
+    @keyframes pulse{50%{opacity:.3}}
+
+    /* Canvas de Fondo: Árbol de las Almas Procedural y Atokirinas */
+    #tree-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;transition:transform 1.4s cubic-bezier(.16,1,.3,1)}
+
+    /* Escenario Cinemático 3D */
+    #scene-container{position:fixed;inset:0;perspective:1000px;overflow:hidden;z-index:2}
+    #camera-rig{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.4s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;justify-content:center}
+    .stage{position:absolute;width:min(880px,88vw);text-align:center;transform-style:preserve-3d}
+    .card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transform:translateZ(-80px) scale(.92);transition:opacity 1s,transform 1.2s,filter 1s;filter:blur(10px);pointer-events:none}
+    .card.active{opacity:1;transform:translateZ(0) scale(1);filter:blur(0);pointer-events:auto}
+    .card.past{opacity:0;transform:translateZ(200px) scale(1.18);filter:blur(14px)}
+    .badge{display:inline-block;font-size:10px;letter-spacing:4px;color:var(--cyan);margin-bottom:18px;padding:5px 16px;border-radius:20px;background:rgba(0,242,254,0.1);border:1px solid rgba(0,242,254,0.3)}
+    .poem{font-family:'Cinzel',serif;font-size:clamp(22px,4vw,38px);line-height:1.55;color:#fff;text-shadow:0 0 25px rgba(0,242,254,0.6);letter-spacing:1px}
+    .glow{color:var(--cyan);text-shadow:0 0 15px var(--cyan);font-weight:700}
+    .subpoem{margin-top:18px;font-size:clamp(14px,2.2vw,18px);color:rgba(220,245,255,0.85);font-style:italic;line-height:1.65;max-width:740px}
+    .navi-title{font-family:'Cinzel',serif;font-size:clamp(34px,7vw,72px);font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,#fff,#00f2fe,#e040fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 35px var(--cyan));margin-bottom:8px}
+
+    #dots{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:50}
+    .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.2);transition:.4s}
+    .dot.active{width:24px;border-radius:6px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+
+    /* Destello Cósmico de Transformación a 2-Bits / 8-Bits */
+    #warp{position:fixed;inset:0;background:radial-gradient(circle,#fff,#00f2fe 40%,#02050e 80%);z-index:60;opacity:0;pointer-events:none}
+    #warp.active{animation:explode 1.8s forwards}@keyframes explode{15%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(3)}}
+
+    /* Escenario Retro 8-Bits & Minijuego */
+    #retro-world{position:fixed;inset:0;z-index:20;display:none;opacity:0;transition:opacity 1s}
+    #retro-world.active{display:block;opacity:1}
+    #game-canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+    .scanlines{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0) 50%,rgba(0,0,0,0.35) 50%);background-size:100% 4px;pointer-events:none;z-index:25;opacity:.6}
+
+    /* Diálogo de la Propuesta */
+    #dialog{position:absolute;top:15%;left:50%;transform:translateX(-50%);width:min(780px,92vw);background:rgba(4,15,23,0.92);border:4px solid var(--teal);padding:clamp(18px,4vw,32px);text-align:center;font-family:'Press Start 2P',monospace;box-shadow:6px 6px 0 #000,0 0 35px rgba(13,245,183,0.4);z-index:30;backdrop-filter:blur(6px);transition:transform .6s,opacity .6s}
+    #dialog.minimized{transform:translateX(-50%) translateY(-150%);opacity:0;pointer-events:none}
+    .d-title{font-size:clamp(15px,3vw,26px);line-height:1.7;color:#fff;text-shadow:3px 3px #000;margin:15px 0}
+    .d-sub{font-size:clamp(8px,1.4vw,11px);line-height:2;color:#d1f7ee;margin-bottom:24px}
+    .actions{display:flex;flex-wrap:wrap;justify-content:center;gap:15px}
+    .r-btn{font-family:'Press Start 2P';font-size:clamp(10px,1.6vw,13px);padding:14px 22px;border:3px solid #fff;color:#fff;cursor:pointer;box-shadow:4px 4px 0 #000;text-transform:uppercase;transition:.1s}
+    .r-btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
+    .r-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+    #btn-yes1{background:#e6005c;border-color:#ff99cc}
+    #btn-yes2{background:#008080;border-color:#80ffff}
+
+    /* HUD del Viaje */
+    #hud{position:absolute;top:16px;left:18px;right:75px;z-index:35;display:none;justify-content:space-between;font-family:'Press Start 2P';pointer-events:none}
+    #hud.active{display:flex}
+    .hud-chip{background:rgba(3,12,18,0.85);border:2.5px solid var(--teal);padding:8px 12px;font-size:clamp(8px,1.3vw,10px);color:#fff;pointer-events:auto;box-shadow:3px 3px 0 #000}
+    #dim-btn{border-color:var(--magenta);color:#ffd6ff;cursor:pointer}
+    #dim-btn:hover{background:rgba(224,64,251,0.2)}
+
+    /* Toast del Multiverso */
+    #dim-toast{position:absolute;top:68px;left:50%;transform:translateX(-50%);width:min(720px,92vw);background:rgba(4,12,24,0.92);border:2px solid var(--cyan);padding:12px 18px;border-radius:6px;text-align:center;z-index:35;display:none;box-shadow:0 0 25px rgba(0,242,254,0.35);animation:fadeIn .5s}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .dim-t-step{font-size:8px;font-family:'Press Start 2P';color:var(--magenta);margin-bottom:4px}
+    .dim-t-title{font-family:'Cinzel';font-size:15px;color:var(--teal);font-weight:700;margin-bottom:4px}
+    .dim-t-lore{font-size:12px;color:#e8f9ff;font-style:italic;line-height:1.5}
+
+    /* Controles Táctiles para Móvil */
+    #touch{position:absolute;bottom:20px;left:0;right:0;display:none;justify-content:space-between;padding:0 20px;z-index:40;pointer-events:none}
+    #touch.active{display:flex}
+    .t-grp{display:flex;gap:12px;pointer-events:auto}
+    .t-btn{width:54px;height:54px;border-radius:50%;background:rgba(8,26,36,0.8);border:2.5px solid var(--teal);color:#fff;font-family:'Press Start 2P';font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 #000}
+    .t-btn:active{transform:scale(0.92);background:rgba(13,245,183,0.3)}
+    .t-jump{border-color:var(--gold);color:var(--gold)}
+    .t-heart{border-color:var(--pink);color:var(--pink)}
+    .t-portal{border-color:var(--magenta);color:var(--magenta);font-size:13px}
+
+    #letter-btn{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(4,18,28,0.9);border:2px solid var(--pink);color:#fff;font-family:'Press Start 2P';font-size:9px;padding:8px 16px;border-radius:18px;cursor:pointer;z-index:38;display:none;box-shadow:0 0 15px rgba(255,42,122,0.4)}
+
+    /* Modal de Carta Final y Estadísticas */
+    #modal{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:rgba(2,8,18,0.94);padding:20px;font-family:'Press Start 2P';backdrop-filter:blur(10px)}
+    .modal-box{background:#061821;border:4px solid var(--teal);padding:clamp(20px,4vw,36px);text-align:center;max-width:640px;box-shadow:8px 8px 0 #000}
+    .m-title{font-size:clamp(13px,2.4vw,19px);color:var(--gold);margin-bottom:15px;line-height:1.5}
+    .m-heart{font-size:40px;color:var(--pink);animation:mbeat .8s infinite alternate}
+    @keyframes mbeat{to{transform:scale(1.2)}}
+    .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;font-size:8px;text-align:left}
+    .m-stat{background:rgba(0,0,0,0.6);border:1.5px solid var(--cyan);padding:8px 10px}
+    .m-msg{font-family:'Outfit';font-size:clamp(14px,2vw,17px);line-height:1.6;color:#e6f7ff;margin-top:14px;font-style:italic}
+    .m-navi{font-family:'Cinzel';font-size:15px;color:var(--teal);margin:12px 0 16px;font-weight:700}
+    .m-close{background:#111;border:2px solid #fff;color:#fff;font-family:'Press Start 2P';font-size:10px;padding:10px 18px;cursor:pointer}
+    .m-close:hover{background:var(--teal);color:#000}
+    #fx{position:fixed;inset:0;pointer-events:none;z-index:85}
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE INICIO -->
+  <div id="start-overlay">
+    <div class="seed-icon">
+      <svg viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="14" fill="#00f2fe" opacity="0.9"/>
+        <path d="M50 50 Q30 20 20 10 M50 50 Q70 20 80 10 M50 50 Q20 40 10 50 M50 50 Q80 40 90 50 M50 50 Q35 75 25 85 M50 50 Q65 75 75 85" stroke="#caf0f8" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <button class="start-btn" id="btn-start">Iniciar Viaje a Pandora</button>
+    <div class="start-sub">Una sorpresa para ti • Toca para conectar</div>
+  </div>
+
+  <button id="sound-btn" title="Sonido">🔊</button>
+  <div id="click-hint">Toca en cualquier parte para avanzar</div>
+
+  <!-- CANVAS PROCEDURAL DEL ÁRBOL DE LAS ALMAS EN PANDORA -->
+  <canvas id="tree-canvas"></canvas>
+
+  <!-- FASE 1: CINEMÁTICA 3D CON NARRATIVA POÉTICA -->
+  <div id="scene-container">
+    <div id="camera-rig">
+      <div class="stage">
+
+        <div class="card" data-step="0">
+          <div class="badge">✦ El Refugio Solitario ✦</div>
+          <p class="poem">Antes de encontrarte, sentía que la vida era una travesía que debía librarse <span class="glow">en soledad</span>...</p>
+          <p class="subpoem">Había construido fortalezas de silencio, convencido de que vivir en constante defensiva era la única forma de no ser herido.</p>
+        </div>
+
+        <div class="card" data-step="1">
+          <div class="badge">✦ La Caída de las Armaduras ✦</div>
+          <p class="poem">Pensaba que amar significaba <span class="glow">perder el control</span>,</p>
+          <p class="subpoem">que bajar la guardia era rendirse... pero cuando tus ojos cruzaron mi camino, entendí que no era una rendición, sino el milagro de encontrar por fin un refugio.</p>
+        </div>
+
+        <div class="card" data-step="2">
+          <div class="badge">✦ El Susurro de Eywa ✦</div>
+          <p class="poem">Como las semillas del Árbol de las Almas que eligen dónde posar su luz,</p>
+          <p class="subpoem">tu ternura desarmó cada uno de mis miedos. Me enseñaste que los lazos más sagrados no necesitan cadenas, sino libertad compartida.</p>
+        </div>
+
+        <div class="card" data-step="3">
+          <div class="badge">✦ Tsaheylu // El Latido Compartido ✦</div>
+          <p class="poem">Y hoy comprendo que <span class="glow">no quiero un camino solitario</span>,</p>
+          <p class="subpoem">ni victorias que no pueda celebrar a tu lado... porque contigo descubrí que cada amanecer es un universo nuevo por explorar.</p>
+        </div>
+
+        <div class="card" data-step="4">
+          <div class="badge">✦ La Verdad de Nuestras Almas ✦</div>
+          <h1 class="navi-title">Oel ngati kameie</h1>
+          <div style="font-family:'Cinzel';font-size:20px;letter-spacing:5px;color:#9eeeff">« Te Veo »</div>
+          <p class="subpoem" style="max-width:720px;margin-top:20px">Te veo no solo con mis ojos, sino con todo mi ser: veo tu luz infinita, tu dulzura y tu fuerza... y elijo caminar a tu lado en cada paso de esta vida.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="dots">
+    <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div id="warp"></div>
+
+  <!-- FASE 2 Y 3: MUNDO RETRO 8-BITS / 2-BITS CON EL VIAJE Y MINIJUEGO -->
+  <div id="retro-world">
+    <canvas id="game-canvas"></canvas>
+    <div class="scanlines"></div>
+
+    <div id="dialog">
+      <div style="color:var(--teal);font-size:9px;margin-bottom:12px">▶ VÍNCULO // ÁRBOL DE LAS ALMAS</div>
+      <h2 class="d-title">¿QUIERES SER MI<br>ACOMPAÑANTE DE AVENTURAS?</h2>
+      <p class="d-sub">Ha comenzado la expedición más hermosa de mi vida... y no quiero recorrer ningún mundo sin ti. ¿Aceptas presionar START y vivir esta historia juntos?</p>
+      <div class="actions">
+        <button class="r-btn" id="btn-yes1">SÍ, ACEPTO ♥ [START]</button>
+        <button class="r-btn" id="btn-yes2">SIEMPRE A TU LADO 🎮 [VÍNCULO]</button>
+      </div>
+    </div>
+
+    <div id="hud">
+      <div class="hud-chip" id="dim-btn">UNIVERSO: <span id="dim-name" style="color:var(--magenta)">1. PANDORA</span> (ENTRA AL PORTAL)</div>
+      <div class="hud-chip">VÍNCULO: <span id="heart-pts" style="color:var(--gold)">25% ♥</span></div>
+    </div>
+
+    <div id="dim-toast">
+      <div class="dim-t-step" id="toast-step">MUNDO 1 DE 4</div>
+      <div class="dim-t-title" id="toast-title">ALMAS DE PANDORA (NA'VI)</div>
+      <div class="dim-t-lore" id="toast-lore">"En este bosque sagrado aprendimos a bajar la guardia y vernos por primera vez con el alma."</div>
+    </div>
+
+    <button id="letter-btn">📜 CARTA DE AMOR</button>
+
+    <div id="touch">
+      <div class="t-grp">
+        <div class="t-btn" id="t-left">◀</div>
+        <div class="t-btn" id="t-right">▶</div>
+      </div>
+      <div class="t-grp">
+        <div class="t-btn t-portal" id="t-portal" title="Cruzar Portal">🌀</div>
+        <div class="t-btn t-heart" id="t-heart">♥</div>
+        <div class="t-btn t-jump" id="t-jump">▲</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CARTA FINAL -->
+  <div id="modal">
+    <div class="modal-box">
+      <div class="m-title">★ ¡ACOMPAÑANTE CONECTADA! ★</div>
+      <div class="m-heart">♥</div>
+      <div class="m-grid">
+        <div class="m-stat"><span style="color:#80ffff">ESTADO:</span> JUNTOS SIEMPRE</div>
+        <div class="m-stat"><span style="color:#80ffff">VÍNCULO:</span> 100% ETERNO</div>
+        <div class="m-stat"><span style="color:#80ffff">VIDAS:</span> ∞ INFINITAS</div>
+        <div class="m-stat"><span style="color:#80ffff">MODO:</span> CO-OP MULTIVERSAL</div>
+      </div>
+      <p class="m-msg">"Ahora sí, mi pequeña... en cualquier universo, con cualquier traje y bajo cualquier cielo, siempre serás mi persona favorita. Ya puedes controlar a los dos personajitos, caminar hacia el portal de la derecha y ver cómo nuestro amor crece en cada realidad."</p>
+      <div class="m-navi">Oel ngati kameie por siempre ♥</div>
+      <button class="m-close" id="btn-close-modal">VOLVER AL VIAJE 🎮</button>
+    </div>
+  </div>
+
+  <canvas id="fx"></canvas>
+
+  <script>
+    /* 1. SINTETIZADOR DE AUDIO */
+    class SoundEngine {
+      constructor(){
+        this.ctx=null;this.muted=false;this.ambient=null;this.chip=null;this.timer=null;
+      }
+      init(){
+        if(this.ctx)return;
+        const AC=window.AudioContext||window.webkitAudioContext;
+        this.ctx=new AC();
+        this.master=this.ctx.createGain();this.master.gain.value=0.75;
+        this.master.connect(this.ctx.destination);
+        this.ambient=this.ctx.createGain();this.ambient.gain.value=0;
+        this.ambient.connect(this.master);
+        this.chip=this.ctx.createGain();this.chip.gain.value=0;
+        this.chip.connect(this.master);
+        this.playPandoraAmbience();
+      }
+      toggleMute(){
+        if(!this.ctx)return;
+        this.muted=!this.muted;
+        this.master.gain.setTargetAtTime(this.muted?0:0.75,this.ctx.currentTime,0.05);
+        return this.muted;
+      }
+      playPandoraAmbience(){
+        const freqs=[92.5,138.6,185,277.2,370];
+        freqs.forEach((f,i)=>{
+          const osc=this.ctx.createOscillator(),g=this.ctx.createGain(),flt=this.ctx.createBiquadFilter();
+          osc.type=i%2===0?'sine':'triangle';osc.frequency.value=f;
+          flt.type='lowpass';flt.frequency.value=550+i*100;
+          g.gain.value=0.05/(i+1);
+          osc.connect(flt);flt.connect(g);g.connect(this.ambient);osc.start();
+        });
+        this.ambient.gain.linearRampToValueAtTime(0.85,this.ctx.currentTime+3);
+      }
+      chime(step){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime;
+        const triads=[[554,830],[587,880],[659,987],[740,1108],[880,1318]];
+        const t=triads[step%triads.length];
+        t.forEach((f,i)=>{
+          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+          o.type='sine';o.frequency.value=f;
+          g.gain.setValueAtTime(0,now+i*0.06);
+          g.gain.linearRampToValueAtTime(0.2,now+i*0.06+0.03);
+          g.gain.exponentialRampToValueAtTime(0.001,now+i*0.06+2);
+          o.connect(g);g.connect(this.master);o.start(now+i*0.06);o.stop(now+i*0.06+2.1);
+        });
+      }
+      heartbeat(){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();
+        o.type='sine';o.frequency.setValueAtTime(60,now);o.frequency.exponentialRampToValueAtTime(28,now+0.6);
+        g.gain.setValueAtTime(0.4,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.6);
+        o.connect(g);g.connect(this.master);o.start(now);o.stop(now+0.65);
+      }
+      warpNoise(){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime;
+        this.ambient.gain.linearRampToValueAtTime(0,now+1);
+        const bSize=this.ctx.sampleRate*1.8,b=this.ctx.createBuffer(1,bSize,this.ctx.sampleRate),d=b.getChannelData(0);
+        for(let i=0;i<bSize;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(this.ctx.sampleRate*0.4));
+        const src=this.ctx.createBufferSource();src.buffer=b;
+        const flt=this.ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.setValueAtTime(4000,now);flt.frequency.exponentialRampToValueAtTime(100,now+1.8);
+        const ng=this.ctx.createGain();ng.gain.setValueAtTime(0.65,now);ng.gain.exponentialRampToValueAtTime(0.001,now+1.9);
+        src.connect(flt);flt.connect(ng);ng.connect(this.master);src.start(now);
+      }
+      startChiptune(){
+        if(!this.ctx)return;
+        this.chip.gain.linearRampToValueAtTime(0.22,this.ctx.currentTime+1);
+        const melody=[523,659,784,1046,784,659,880,1046,1318,1046,880,784,698,880,1046,880,698,659,587,784,988,784,587,523];
+        const bass=[130,130,174,174,220,220,196,196];
+        let tick=0;clearInterval(this.timer);
+        this.timer=setInterval(()=>{
+          if(this.muted||!this.ctx)return;
+          const now=this.ctx.currentTime;
+          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+          o.type='square';o.frequency.value=melody[tick%melody.length];
+          g.gain.setValueAtTime(0.12,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.16);
+          o.connect(g);g.connect(this.chip);o.start(now);o.stop(now+0.17);
+
+          if(tick%2===0){
+            const bo=this.ctx.createOscillator(),bg=this.ctx.createGain();
+            bo.type='triangle';bo.frequency.value=bass[Math.floor(tick/2)%bass.length];
+            bg.gain.setValueAtTime(0.18,now);bg.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+            bo.connect(bg);bg.connect(this.chip);bo.start(now);bo.stop(now+0.32);
+          }
+          tick++;
+        },175);
+      }
+      jumpSfx(){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();
+        o.type='square';o.frequency.setValueAtTime(240,now);o.frequency.exponentialRampToValueAtTime(680,now+0.12);
+        g.gain.setValueAtTime(0.15,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.13);
+        o.connect(g);g.connect(this.master);o.start(now);o.stop(now+0.14);
+      }
+      heartSfx(){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime;
+        [523,659,784,1046].forEach((f,i)=>{
+          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+          o.type='triangle';o.frequency.value=f;
+          g.gain.setValueAtTime(0.2,now+i*0.05);g.gain.exponentialRampToValueAtTime(0.001,now+i*0.05+0.22);
+          o.connect(g);g.connect(this.master);o.start(now+i*0.05);o.stop(now+i*0.05+0.25);
+        });
+      }
+      portalSfx(){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();
+        o.type='sawtooth';o.frequency.setValueAtTime(220,now);o.frequency.linearRampToValueAtTime(950,now+0.25);
+        g.gain.setValueAtTime(0.22,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.35);
+        o.connect(g);g.connect(this.master);o.start(now);o.stop(now+0.38);
+      }
+      fanfare(){
+        if(!this.ctx||this.muted)return;
+        const now=this.ctx.currentTime;
+        [{f:523,d:.1,t:0},{f:659,d:.1,t:.12},{f:784,d:.1,t:.24},{f:1046,d:.4,t:.36}].forEach(item=>{
+          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+          o.type='square';o.frequency.value=item.f;
+          g.gain.setValueAtTime(0.25,now+item.t);g.gain.exponentialRampToValueAtTime(0.001,now+item.t+item.d);
+          o.connect(g);g.connect(this.master);o.start(now+item.t);o.stop(now+item.t+item.d+0.05);
+        });
+      }
+    }
+    const audio=new SoundEngine();
+
+    /* 2. ÁRBOL DE LAS ALMAS PROCEDURAL Y ACERCAMIENTO DINÁMICO */
+    const treeCanvas=document.getElementById('tree-canvas'),tCtx=treeCanvas.getContext('2d');
+    let tW=treeCanvas.width=window.innerWidth,tH=treeCanvas.height=window.innerHeight;
+    window.addEventListener('resize',()=>{tW=treeCanvas.width=window.innerWidth;tH=treeCanvas.height=window.innerHeight});
+
+    let treeScale=0.68,treeTargetScale=0.68,treeTick=0;
+    const treeScaleSteps=[0.68,0.85,1.05,1.30,1.65];
+
+    // Semillas Atokirina
+    const seeds=Array.from({length:32},()=>({
+      x:Math.random()*tW,y:Math.random()*tH,vy:-0.4-Math.random()*0.6,vx:(Math.random()-.5)*0.5,
+      size:6+Math.random()*9,p:Math.random()*6,alpha:0.4+Math.random()*0.5
+    }));
+
+    function loopIntroTree(){
+      treeTick++;
+      treeScale+=(treeTargetScale-treeScale)*0.04;
+      tCtx.clearRect(0,0,tW,tH);
+
+      const grad=tCtx.createRadialGradient(tW*0.5,tH*0.5,50,tW*0.5,tH*0.5,Math.max(tW,tH)*0.8);
+      grad.addColorStop(0,'#051833');grad.addColorStop(0.6,'#030b1c');grad.addColorStop(1,'#01040a');
+      tCtx.fillStyle=grad;tCtx.fillRect(0,0,tW,tH);
+
+      tCtx.save();
+      tCtx.translate(tW*0.5,tH*0.82);
+      tCtx.scale(treeScale,treeScale);
+
+      // Resplandor del núcleo sagrado
+      const core=tCtx.createRadialGradient(0,-180,30,0,-180,340);
+      core.addColorStop(0,'rgba(0,242,254,0.4)');core.addColorStop(0.5,'rgba(224,64,251,0.2)');core.addColorStop(1,'transparent');
+      tCtx.fillStyle=core;tCtx.beginPath();tCtx.arc(0,-180,340,0,Math.PI*2);tCtx.fill();
+
+      // Tronco ancestral retorcido
+      tCtx.fillStyle='#041716';
+      tCtx.beginPath();
+      tCtx.moveTo(-45,0);tCtx.quadraticCurveTo(-30,-120,-15,-220);tCtx.lineTo(15,-220);
+      tCtx.quadraticCurveTo(30,-120,45,0);tCtx.fill();
+
+      // Ramas principales
+      tCtx.strokeStyle='#041716';tCtx.lineWidth=22;tCtx.lineCap='round';
+      tCtx.beginPath();tCtx.moveTo(0,-200);tCtx.quadraticCurveTo(-120,-260,-220,-230);tCtx.stroke();
+      tCtx.beginPath();tCtx.moveTo(0,-200);tCtx.quadraticCurveTo(120,-260,220,-230);tCtx.stroke();
+      tCtx.beginPath();tCtx.moveTo(0,-210);tCtx.quadraticCurveTo(0,-300,-80,-350);tCtx.stroke();
+      tCtx.beginPath();tCtx.moveTo(0,-210);tCtx.quadraticCurveTo(0,-300,80,-350);tCtx.stroke();
+
+      // Vetas bioluminiscentes en el tronco
+      tCtx.fillStyle='#00f2fe';
+      for(let i=0;i<8;i++){
+        const oy=-20-i*24,ox=Math.sin(treeTick*0.04+i)*12;
+        tCtx.fillRect(ox-5,oy,8,14);
+      }
+
+      // Sauce sagrado (Zarcillos bioluminiscentes colgantes)
+      const fronds=48;
+      for(let i=0;i<fronds;i++){
+        const rx=-260+(i/fronds)*520;
+        const ry=-220-Math.sin((i/fronds)*Math.PI)*90;
+        const len=140+Math.sin(i*1.8)*55;
+        const sway=Math.sin(treeTick*0.035+i*0.35)*22;
+
+        tCtx.strokeStyle=i%2===0?'#ffffff':(i%3===0?'#e040fb':'#00f2fe');
+        tCtx.lineWidth=2.2;
+        tCtx.beginPath();tCtx.moveTo(rx,ry);
+        tCtx.quadraticCurveTo(rx+sway*0.5,ry+len*0.5,rx+sway,ry+len);
+        tCtx.stroke();
+
+        tCtx.fillStyle='#ffffff';
+        tCtx.beginPath();tCtx.arc(rx+sway,ry+len,2.5,0,Math.PI*2);tCtx.fill();
+      }
+      tCtx.restore();
+
+      // Semillas Atokirinas flotando en el ambiente
+      seeds.forEach(s=>{
+        s.p+=0.03;s.y+=s.vy;s.x+=s.vx+Math.sin(s.p)*0.4;
+        if(s.y<-40)s.y=tH+20;
+        tCtx.save();tCtx.translate(s.x,s.y);
+        tCtx.fillStyle=`rgba(0,242,254,${s.alpha*(0.7+Math.sin(s.p)*0.3)})`;
+        tCtx.beginPath();tCtx.arc(0,0,s.size,0,Math.PI*2);tCtx.fill();
+        tCtx.strokeStyle='rgba(220,245,255,0.75)';tCtx.lineWidth=1.2;
+        for(let i=0;i<6;i++){
+          const a=(i/6)*Math.PI*2;
+          tCtx.beginPath();tCtx.moveTo(0,0);
+          tCtx.quadraticCurveTo(Math.cos(a)*10,Math.sin(a)*10,Math.cos(a)*18,Math.sin(a)*18+6);
+          tCtx.stroke();
+        }
+        tCtx.restore();
+      });
+
+      requestAnimationFrame(loopIntroTree);
+    }
+    loopIntroTree();
+
+    /* 3. CINEMÁTICA Y NARRATIVA 3D CON DOLLY ZOOM */
+    const rig=document.getElementById('camera-rig'),cards=document.querySelectorAll('.card');
+    const dots=document.querySelectorAll('.dot');
+    let step=-1,storyTimer=null;
+    const camZ=[0,120,240,380,540];
+
+    function goStep(idx){
+      if(idx>=cards.length){triggerWarp();return}
+      step=idx;
+      rig.style.transform=`translateZ(${camZ[step]}px)`;
+      treeTargetScale=treeScaleSteps[step];
+
+      cards.forEach((c,i)=>{
+        c.classList.remove('active','past');
+        if(i===step)c.classList.add('active');
+        else if(i<step)c.classList.add('past');
+      });
+      dots.forEach((d,i)=>{
+        d.classList.remove('active');
+        if(i===step)d.classList.add('active');
+      });
+      audio.chime(step);audio.heartbeat();
+    }
+
+    const durations=[5500,5600,6000,6200,7500];
+    function schedule(idx){
+      if(idx>=cards.length-1){
+        storyTimer=setTimeout(triggerWarp,durations[idx]);return;
+      }
+      storyTimer=setTimeout(()=>{goStep(idx+1);schedule(idx+1)},durations[idx]);
+    }
+
+    document.addEventListener('click',e=>{
+      if(e.target.closest('button')||step<0||step>=cards.length)return;
+      clearTimeout(storyTimer);goStep(step+1);
+      if(step<cards.length-1)schedule(step);
+      else if(step===cards.length-1)storyTimer=setTimeout(triggerWarp,durations[step]);
+    });
+
+    function triggerWarp(){
+      document.getElementById('dots').style.display='none';
+      document.getElementById('click-hint').style.display='none';
+      audio.warpNoise();
+      document.getElementById('warp').classList.add('active');
+      rig.style.transition='transform 1.4s,filter 1.2s';
+      rig.style.transform='translateZ(1400px) scale(1.8)';
+      rig.style.filter='blur(20px)';
+      setTimeout(()=>{
+        document.getElementById('scene-container').style.display='none';
+        treeCanvas.style.display='none';
+        document.getElementById('retro-world').classList.add('active');
+        initGame();audio.startChiptune();
+      },1200);
+    }
+
+    /* 4. MOTOR MULTIVERSO CON ÁRBOL DE 2-BITS Y PORTAL DE VIAJE */
+    const gCanvas=document.getElementById('game-canvas'),gCtx=gCanvas.getContext('2d');
+    let gW=gCanvas.width=window.innerWidth,gH=gCanvas.height=window.innerHeight;
+    let ground=gH*0.78;
+    window.addEventListener('resize',()=>{gW=gCanvas.width=window.innerWidth;gH=gCanvas.height=window.innerHeight;ground=gH*0.78});
+
+    const WORLDS=[
+      {
+        stepLabel:"MUNDO 1 DE 4 • EL DESPERTAR DEL VÍNCULO",
+        name:"1. PANDORA",
+        title:"ALMAS DE PANDORA (NA'VI)",
+        lore:"«En este bosque sagrado aprendimos a bajar la guardia y vernos por primera vez con el alma.»",
+        bond:25,
+        p1Color:'#00b4d8',p2Color:'#48cae4',type:'navi',
+        bgTheme:'#05221d',skyTheme:'#020612'
+      },
+      {
+        stepLabel:"MUNDO 2 DE 4 • CONFIANZA EN LA OSCURIDAD",
+        name:"2. GOTHAM",
+        title:"SOMBRAS DE GOTHAM (VIGILANTE & FELINA)",
+        lore:"«Incluso en la noche más caótica y solitaria, aprendimos a cuidarnos las espaldas sin miedo.»",
+        bond:50,
+        p1Color:'#1c1c24',p2Color:'#242430',type:'bat',
+        bgTheme:'#12121e',skyTheme:'#080811'
+      },
+      {
+        stepLabel:"MUNDO 3 DE 4 • CONEXIÓN ENTRE ESTRELLAS",
+        name:"3. COSMOS",
+        title:"GUARDIANES ESTELARES (SABLES DE LUZ)",
+        lore:"«A través de galaxias enteras e infinitas distancias cósmicas, la Fuerza siempre nos devuelve al mismo punto: juntos.»",
+        bond:75,
+        p1Color:'#7f5539',p2Color:'#e9ecef',type:'jedi',
+        bgTheme:'#1a0d2b',skyTheme:'#080214'
+      },
+      {
+        stepLabel:"MUNDO 4 DE 4 • EL VÍNCULO ETERNO",
+        name:"4. LEYENDA",
+        title:"HÉROES DE LA LEYENDA (VALOR & SABIDURÍA)",
+        lore:"«No importa cuántas vidas o eras temporales tengamos que cruzar... siempre encontraré el camino para estar a tu lado.»",
+        bond:100,
+        p1Color:'#2d6a4f',p2Color:'#f72585',type:'hero',
+        bgTheme:'#1b3323',skyTheme:'#07170f'
+      }
+    ];
+
+    let curWorld=0,playable=false,gTick=0,isWarping=false;
+    const p1={x:gW*0.28,y:ground,vx:0,vy:0,grounded:true,dir:1,holding:false};
+    const p2={x:gW*0.52,y:ground,vx:0,vy:0,grounded:true,dir:-1,holding:false};
+    const input={left:false,right:false,jump:false};
+
+    window.addEventListener('keydown',e=>{
+      if(!playable)return;
+      if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')input.left=true;
+      if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')input.right=true;
+      if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' '){doJump();input.jump=true}
+      if(e.key==='x'||e.key==='X'||e.key==='e'||e.key==='E')enterPortal();
+      if(e.key==='h'||e.key==='H')doHeart();
+    });
+    window.addEventListener('keyup',e=>{
+      if(!playable)return;
+      if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')input.left=false;
+      if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')input.right=false;
+      if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' ')input.jump=false;
+    });
+
+    function doJump(){
+      if(p1.grounded){p1.vy=-13.5;p1.grounded=false}
+      if(p2.grounded){p2.vy=-13.5;p2.grounded=false}
+      audio.jumpSfx();
+    }
+    function doHeart(){
+      audio.heartSfx();
+      triggerVictoryFx();
+    }
+
+    function enterPortal(){
+      if(isWarping)return;
+      isWarping=true;
+      audio.portalSfx();
+
+      const warpEl=document.getElementById('warp');
+      warpEl.classList.remove('active');
+      void warpEl.offsetWidth;
+      warpEl.classList.add('active');
+
+      setTimeout(()=>{
+        curWorld=(curWorld+1)%WORLDS.length;
+        const w=WORLDS[curWorld];
+
+        p1.x=gW*0.18;p2.x=gW*0.35;
+        p1.vx=3;p2.vx=3;
+
+        document.getElementById('dim-name').innerText=w.name;
+        document.getElementById('heart-pts').innerText=w.bond+'% ♥';
+        document.getElementById('toast-step').innerText=w.stepLabel;
+        document.getElementById('toast-title').innerText=w.title;
+        document.getElementById('toast-lore').innerText=w.lore;
+        document.getElementById('dim-toast').style.display='block';
+
+        if(w.bond===100){
+          audio.fanfare();
+          document.getElementById('modal').style.display='flex';
+        }
+        isWarping=false;
+      },700);
+    }
+
+    function initGame(){
+      p1.y=ground;p2.y=ground;
+      requestAnimationFrame(gameLoop);
+    }
+
+    function drawPortal(px,py){
+      gCtx.save();
+      const pulse=1+Math.sin(gTick*0.12)*0.15,swirl=gTick*0.06;
+      const grad=gCtx.createRadialGradient(px,py,10,px,py,55*pulse);
+      grad.addColorStop(0,'#ffffff');grad.addColorStop(0.3,'#00f2fe');grad.addColorStop(0.7,'#e040fb');grad.addColorStop(1,'transparent');
+      gCtx.fillStyle=grad;gCtx.beginPath();gCtx.arc(px,py,55*pulse,0,Math.PI*2);gCtx.fill();
+
+      gCtx.strokeStyle='rgba(255,255,255,0.85)';gCtx.lineWidth=3;
+      gCtx.beginPath();gCtx.ellipse(px,py,18*pulse,42*pulse,swirl,0,Math.PI*2);gCtx.stroke();
+      gCtx.strokeStyle='rgba(13,245,183,0.9)';
+      gCtx.beginPath();gCtx.ellipse(px,py,26*pulse,48*pulse,-swirl*1.2,0,Math.PI*2);gCtx.stroke();
+
+      gCtx.font="8px 'Press Start 2P'";gCtx.fillStyle=Math.sin(gTick*0.1)>0?'#ffe600':'#ffffff';
+      gCtx.textAlign='center';
+      gCtx.fillText("▶ PORTAL ◀",px,py-60);
+      gCtx.fillText("ENTRAR",px,py-48);
+      gCtx.restore();
+    }
+
+    function drawWorldBackdrop(){
+      const w=WORLDS[curWorld];
+      const sky=gCtx.createLinearGradient(0,0,0,gH);
+      sky.addColorStop(0,w.skyTheme);sky.addColorStop(0.6,w.bgTheme);sky.addColorStop(1,'#04120e');
+      gCtx.fillStyle=sky;gCtx.fillRect(0,0,gW,gH);
+
+      if(curWorld===0){
+        // Pandora en 2-Bits: Árbol Sagrado y Polifemo
+        drawPolyphemus(gW*0.8,gH*0.2);
+        drawTree2Bit(gW*0.48,ground);
+      } else if(curWorld===1){
+        drawGothamSkyline();
+      } else if(curWorld===2){
+        drawCosmosNebula();
+      } else if(curWorld===3){
+        drawLegendCastle();
+      }
+
+      // Isla flotante
+      const iw=Math.min(840,gW*0.94);
+      gCtx.fillStyle='#09231c';gCtx.fillRect(gW*0.5-iw/2,ground+10,iw,50);
+      gCtx.fillStyle='#13d6a8';gCtx.fillRect(gW*0.5-iw/2,ground+6,iw,6);
+    }
+
+    function drawPolyphemus(cx,cy){
+      gCtx.fillStyle='#302b63';gCtx.beginPath();gCtx.arc(cx,cy,42,0,Math.PI*2);gCtx.fill();
+      gCtx.strokeStyle='rgba(0,242,254,0.35)';gCtx.lineWidth=4;
+      gCtx.beginPath();gCtx.ellipse(cx,cy,70,15,-0.3,0,Math.PI*2);gCtx.stroke();
+    }
+
+    function drawTree2Bit(cx,baseY){
+      const rad=gCtx.createRadialGradient(cx,baseY-130,20,cx,baseY-130,200);
+      rad.addColorStop(0,'rgba(0,242,254,0.25)');rad.addColorStop(1,'transparent');
+      gCtx.fillStyle=rad;gCtx.beginPath();gCtx.arc(cx,baseY-130,200,0,Math.PI*2);gCtx.fill();
+      gCtx.fillStyle='#071e1c';gCtx.fillRect(cx-26,baseY-160,52,160);
+      for(let i=0;i<26;i++){
+        const rx=cx-130+(i/26)*260,ry=baseY-170,len=85+Math.sin(i*1.8)*30,sway=Math.sin(gTick*0.04+i*0.4)*14;
+        gCtx.strokeStyle=i%2===0?'#fff':'#00f2fe';gCtx.lineWidth=2;
+        gCtx.beginPath();gCtx.moveTo(rx,ry);gCtx.quadraticCurveTo(rx+sway*0.5,ry+len*0.5,rx+sway,ry+len);gCtx.stroke();
+      }
+    }
+
+    function drawGothamSkyline(){
+      gCtx.fillStyle='#ffe600';gCtx.beginPath();gCtx.arc(gW*0.75,gH*0.22,40,0,Math.PI*2);gCtx.fill();
+      gCtx.fillStyle='#090915';
+      for(let i=0;i<9;i++){
+        const bx=gW*0.1+i*(gW*0.09),bw=gW*0.08,bh=120+(i%3)*60;
+        gCtx.fillRect(bx,ground-bh,bw,bh);
+        gCtx.fillStyle='#ffe600';
+        gCtx.fillRect(bx+10,ground-bh+20,6,8);
+        gCtx.fillRect(bx+25,ground-bh+40,6,8);
+        gCtx.fillStyle='#090915';
+      }
+    }
+
+    function drawCosmosNebula(){
+      const rad=gCtx.createRadialGradient(gW*0.5,gH*0.3,30,gW*0.5,gH*0.3,280);
+      rad.addColorStop(0,'rgba(224,64,251,0.3)');rad.addColorStop(0.5,'rgba(0,242,254,0.15)');rad.addColorStop(1,'transparent');
+      gCtx.fillStyle=rad;gCtx.fillRect(0,0,gW,gH);
+      gCtx.fillStyle='#ffffff';
+      for(let i=0;i<18;i++){
+        const sx=(i*97)%gW,sy=(i*53)%(gH*0.6);
+        if(Math.sin(gTick*0.1+i)>0)gCtx.fillRect(sx,sy,3,3);
+      }
+    }
+
+    function drawLegendCastle(){
+      gCtx.fillStyle='rgba(13,245,183,0.18)';
+      gCtx.fillRect(0,gH*0.15,gW,80);
+      gCtx.fillStyle='#0e261d';
+      gCtx.fillRect(gW*0.42,ground-130,35,130);
+      gCtx.fillRect(gW*0.54,ground-130,35,130);
+      gCtx.fillRect(gW*0.46,ground-160,40,160);
+      gCtx.fillStyle='#ffd166';
+      gCtx.fillRect(gW*0.48,ground-175,12,8);
+    }
+
+    function drawChar(p,isP1){
+      const d=WORLDS[curWorld];
+      gCtx.save();gCtx.translate(p.x,p.y);
+      if(p.dir<0)gCtx.scale(-1,1);
+      const sc=2.2,breath=Math.sin(gTick*0.08)*1.5,walk=Math.sin(gTick*0.25)*(Math.abs(p.vx)>0.1?5:0);
+      
+      gCtx.fillStyle=isP1?d.p1Color:d.p2Color;
+      gCtx.fillRect(-7*sc,(-22+breath)*sc,14*sc,12*sc);
+      gCtx.fillRect(-5*sc,(-10+breath)*sc,10*sc,10*sc);
+
+      if(d.type==='navi'){
+        gCtx.fillStyle='#0077b6';gCtx.fillRect(-10*sc,(-24+breath)*sc,3*sc,6*sc);gCtx.fillRect(7*sc,(-24+breath)*sc,3*sc,6*sc);
+        gCtx.fillStyle='#111';gCtx.fillRect(-9*sc,(-16+breath)*sc,3*sc,14*sc);
+        gCtx.fillStyle='#e040fb';gCtx.fillRect(-9*sc,(0+breath)*sc,3*sc,3*sc);
+        if(!isP1){gCtx.fillStyle='#ff2a7a';gCtx.fillRect(4*sc,(-25+breath)*sc,4*sc,4*sc)}
+      } else if(d.type==='bat'){
+        if(isP1){
+          gCtx.fillStyle='#111';gCtx.fillRect(-8*sc,(-28+breath)*sc,3*sc,6*sc);gCtx.fillRect(5*sc,(-28+breath)*sc,3*sc,6*sc);
+          gCtx.fillStyle='#0a0a0f';gCtx.fillRect(-9*sc,(-9+breath)*sc,5*sc,14*sc);
+        } else {
+          gCtx.fillStyle='#111';gCtx.fillRect(-7*sc,(-27+breath)*sc,3*sc,5*sc);gCtx.fillRect(4*sc,(-27+breath)*sc,3*sc,5*sc);
+        }
+      } else if(d.type==='jedi'){
+        gCtx.fillStyle=isP1?'#00f2fe':'#ff2a7a';
+        gCtx.fillRect(7*sc,(-20+breath)*sc,3*sc,18*sc);
+        gCtx.fillStyle='#fff';gCtx.fillRect(7.5*sc,(-18+breath)*sc,2*sc,15*sc);
+      }
+
+      gCtx.fillStyle='#ffd166';
+      gCtx.fillRect(1*sc,(-18+breath)*sc,3*sc,3*sc);gCtx.fillRect(-4*sc,(-18+breath)*sc,3*sc,3*sc);
+
+      gCtx.fillStyle=isP1?d.p1Color:d.p2Color;
+      if(p.holding){
+        gCtx.fillRect(4*sc,(-6+breath)*sc,8*sc,4*sc);
+      } else {
+        gCtx.fillRect(4*sc,(-6+breath)*sc,3*sc,7*sc);
+      }
+
+      gCtx.fillRect(-4*sc,(1+walk)*sc,3*sc,8*sc);
+      gCtx.fillRect(1*sc,(1-walk)*sc,3*sc,8*sc);
+      gCtx.restore();
+    }
+
+    function gameLoop(){
+      gTick++;
+      gCtx.clearRect(0,0,gW,gH);
+      drawWorldBackdrop();
+
+      const portalX=gW*0.86,portalY=ground-35;
+      drawPortal(portalX,portalY);
+
+      if(playable){
+        const spd=4.5,grav=0.72;
+        if(input.left){p1.vx=-spd;p2.vx=-spd*0.9;p1.dir=-1;p2.dir=-1}
+        else if(input.right){p1.vx=spd;p2.vx=spd*0.9;p1.dir=1;p2.dir=1}
+        else {p1.vx*=0.75;p2.vx*=0.75}
+
+        p1.vy+=grav;p2.vy+=grav;
+        p1.x+=p1.vx;p1.y+=p1.vy;p2.x+=p2.vx;p2.y+=p2.vy;
+
+        if(p1.y>=ground){p1.y=ground;p1.vy=0;p1.grounded=true}
+        if(p2.y>=ground){p2.y=ground;p2.vy=0;p2.grounded=true}
+        p1.x=Math.max(35,Math.min(gW-35,p1.x));p2.x=Math.max(35,Math.min(gW-35,p2.x));
+
+        if(p1.x>portalX-30||p2.x>portalX-30){
+          enterPortal();
+        }
+      }
+
+      drawChar(p1,true);drawChar(p2,false);
+
+      const dist=Math.abs(p1.x-p2.x);
+      const close=dist<70;
+      p1.holding=close;p2.holding=close;
+
+      if(close){
+        const midX=(p1.x+p2.x)/2,midY=Math.min(p1.y,p2.y)-60;
+        const pulse=1+Math.sin(gTick*0.15)*0.18,s=20*pulse;
+        gCtx.fillStyle='#ff2a7a';
+        gCtx.fillRect(midX-s,midY-s*0.5,s*0.9,s*0.9);
+        gCtx.fillRect(midX+s*0.1,midY-s*0.5,s*0.9,s*0.9);
+        gCtx.fillRect(midX-s*1.1,midY-s*0.1,s*2.2,s*0.7);
+        gCtx.fillRect(midX-s*0.7,midY+s*0.6,s*1.4,s*0.5);
+
+        gCtx.font="9px 'Press Start 2P'";gCtx.fillStyle='#ff2a7a';gCtx.textAlign='center';
+        gCtx.fillText("♥ VÍNCULO ETERNO ♥",midX,midY-24);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* 5. EVENTOS Y CONTROL */
+    document.getElementById('btn-start').addEventListener('click',()=>{
+      audio.init();document.getElementById('start-overlay').classList.add('hidden');
+      goStep(0);schedule(0);
+    });
+
+    document.getElementById('sound-btn').addEventListener('click',()=>{
+      const m=audio.toggleMute();
+      document.getElementById('sound-btn').innerText=m?'🔇':'🔊';
+    });
+
+    function accept(){
+      audio.fanfare();
+      document.getElementById('dialog').classList.add('minimized');
+      playable=true;
+      document.getElementById('hud').classList.add('active');
+      document.getElementById('touch').classList.add('active');
+      document.getElementById('letter-btn').style.display='block';
+      document.getElementById('dim-toast').style.display='block';
+      triggerVictoryFx();
+    }
+
+    document.getElementById('btn-yes1').addEventListener('click',accept);
+    document.getElementById('btn-yes2').addEventListener('click',accept);
+    document.getElementById('letter-btn').addEventListener('click',()=>{document.getElementById('modal').style.display='flex'});
+    document.getElementById('btn-close-modal').addEventListener('click',()=>{document.getElementById('modal').style.display='none'});
+    document.getElementById('dim-btn').addEventListener('click',enterPortal);
+
+    const bindTouch=(id,down,up)=>{
+      const el=document.getElementById(id);
+      el.addEventListener('pointerdown',down);
+      el.addEventListener('pointerup',up);
+      el.addEventListener('pointerleave',up);
+    };
+    bindTouch('t-left',()=>input.left=true,()=>input.left=false);
+    bindTouch('t-right',()=>input.right=true,()=>input.right=false);
+    document.getElementById('t-jump').addEventListener('pointerdown',doJump);
+    document.getElementById('t-heart').addEventListener('pointerdown',doHeart);
+    document.getElementById('t-portal').addEventListener('pointerdown',enterPortal);
+
+    /* CONFETI FX */
+    const fxCanvas=document.getElementById('fx'),fCtx=fxCanvas.getContext('2d');
+    let fW=fxCanvas.width=window.innerWidth,fH=fxCanvas.height=window.innerHeight;
+    window.addEventListener('resize',()=>{fW=fxCanvas.width=window.innerWidth;fH=fxCanvas.height=window.innerHeight});
+    let particles=[];
+    function triggerVictoryFx(){
+      for(let i=0;i<120;i++){
+        particles.push({
+          x:fW/2,y:fH/2,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*16-3,
+          color:['#0df5b7','#ff2a7a','#ffe600','#00f2fe','#e040fb'][Math.floor(Math.random()*5)],
+          life:1,decay:0.008+Math.random()*0.008
+        });
+      }
+      renderFx();
+    }
+    function renderFx(){
+      fCtx.clearRect(0,0,fW,fH);
+      for(let i=particles.length-1;i>=0;i--){
+        const p=particles[i];
+        p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life-=p.decay;
+        if(p.life<=0){particles.splice(i,1);continue}
+        fCtx.fillStyle=p.color;fCtx.globalAlpha=p.life;
+        fCtx.fillRect(p.x,p.y,8,8);
+      }
+      if(particles.length>0)requestAnimationFrame(renderFx);
+    }
+  </script>
+</body>
+</html>
