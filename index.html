@@ -2,876 +2,2710 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>Oel Ngati Kameie // ¿Quieres ser mi acompañante de aventuras?</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Multiverso de Almas // Nuestro Amor en Varios Universos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Press+Start+2P&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,500;1,700&display=swap" rel="stylesheet">
   <style>
-    :root{--cyan:#00f2fe;--magenta:#e040fb;--teal:#0df5b7;--pink:#ff2a7a;--gold:#ffe600}
-    *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-    html,body{width:100%;height:100%;overflow:hidden;background:#02050e;color:#fff;font-family:'Outfit',sans-serif}
-    
-    /* Pantalla de Inicio / Desbloqueo de Audio */
-    #start-overlay{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at center,#07152d 0%,#010308 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity 1s,visibility 1s}
-    #start-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
-    .seed-icon{width:75px;height:75px;margin-bottom:20px;filter:drop-shadow(0 0 25px var(--cyan));animation:float 3s ease-in-out infinite alternate}
-    @keyframes float{to{transform:translateY(-14px) scale(1.08)}}
-    .start-btn{font-family:'Cinzel',serif;font-size:clamp(14px,2.5vw,18px);letter-spacing:4px;color:#e6f9ff;border:1.5px solid var(--cyan);padding:16px 38px;border-radius:40px;background:rgba(0,242,254,0.12);backdrop-filter:blur(10px);box-shadow:0 0 30px rgba(0,242,254,0.3);cursor:pointer;transition:.3s}
-    .start-btn:hover{background:rgba(0,242,254,0.25);transform:scale(1.05);box-shadow:0 0 45px rgba(0,242,254,0.5)}
-    .start-sub{margin-top:14px;font-size:11px;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+    :root {
+      --cyan: #00f2fe;
+      --azure: #0084ff;
+      --magenta: #e040fb;
+      --gold: #ffd166;
+      --emerald: #0df5b7;
+      --pink: #ff2a7a;
+      --spidey-red: #ff2a4b;
+      --spidey-blue: #0d2d63;
+      --gwen-pink: #ff3377;
+      --gamora-green: #2ecc71;
+      --milano-orange: #ff7700;
+      --wanda-red: #e74c3c;
+      --vision-gold: #f1c40f;
+      --iron-gold: #f5b041;
+      --iron-red: #c0392b;
+      --arc-blue: #5dade2;
+      --bg-dark: #01040d;
+    }
 
-    #sound-btn{position:fixed;top:18px;right:18px;z-index:95;background:rgba(4,14,28,0.7);border:1px solid var(--cyan);border-radius:50%;width:42px;height:42px;color:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px)}
-    #click-hint{position:fixed;bottom:45px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,242,254,0.6);z-index:40;pointer-events:none;animation:pulse 2s infinite}
-    @keyframes pulse{50%{opacity:.3}}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
 
-    /* Canvas de Fondo: Árbol de las Almas Procedural y Atokirinas */
-    #tree-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;transition:transform 1.4s cubic-bezier(.16,1,.3,1)}
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-dark);
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+    }
 
-    /* Escenario Cinemático 3D */
-    #scene-container{position:fixed;inset:0;perspective:1000px;overflow:hidden;z-index:2}
-    #camera-rig{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.4s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;justify-content:center}
-    .stage{position:absolute;width:min(880px,88vw);text-align:center;transform-style:preserve-3d}
-    .card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transform:translateZ(-80px) scale(.92);transition:opacity 1s,transform 1.2s,filter 1s;filter:blur(10px);pointer-events:none}
-    .card.active{opacity:1;transform:translateZ(0) scale(1);filter:blur(0);pointer-events:auto}
-    .card.past{opacity:0;transform:translateZ(200px) scale(1.18);filter:blur(14px)}
-    .badge{display:inline-block;font-size:10px;letter-spacing:4px;color:var(--cyan);margin-bottom:18px;padding:5px 16px;border-radius:20px;background:rgba(0,242,254,0.1);border:1px solid rgba(0,242,254,0.3)}
-    .poem{font-family:'Cinzel',serif;font-size:clamp(22px,4vw,38px);line-height:1.55;color:#fff;text-shadow:0 0 25px rgba(0,242,254,0.6);letter-spacing:1px}
-    .glow{color:var(--cyan);text-shadow:0 0 15px var(--cyan);font-weight:700}
-    .subpoem{margin-top:18px;font-size:clamp(14px,2.2vw,18px);color:rgba(220,245,255,0.85);font-style:italic;line-height:1.65;max-width:740px}
-    .navi-title{font-family:'Cinzel',serif;font-size:clamp(34px,7vw,72px);font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,#fff,#00f2fe,#e040fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 35px var(--cyan));margin-bottom:8px}
+    #game-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+    }
 
-    #dots{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:50}
-    .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.2);transition:.4s}
-    .dot.active{width:24px;border-radius:6px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+    /* Barras Panavision / Letterbox */
+    .cinema-bar {
+      position: fixed;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      background: #000206;
+      z-index: 25;
+      transition: height 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    #bar-top { top: 0; border-bottom: 1px solid rgba(0, 242, 254, 0.25); }
+    #bar-bottom { bottom: 0; border-top: 1px solid rgba(0, 242, 254, 0.25); }
 
-    /* Destello Cósmico de Transformación a 2-Bits / 8-Bits */
-    #warp{position:fixed;inset:0;background:radial-gradient(circle,#fff,#00f2fe 40%,#02050e 80%);z-index:60;opacity:0;pointer-events:none}
-    #warp.active{animation:explode 1.8s forwards}@keyframes explode{15%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(3)}}
+    .cinematic-mode .cinema-bar {
+      height: 12%;
+    }
 
-    /* Escenario Retro 8-Bits & Minijuego */
-    #retro-world{position:fixed;inset:0;z-index:20;display:none;opacity:0;transition:opacity 1s}
-    #retro-world.active{display:block;opacity:1}
-    #game-canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
-    .scanlines{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0) 50%,rgba(0,0,0,0.35) 50%);background-size:100% 4px;pointer-events:none;z-index:25;opacity:.6}
+    .vignette-fx {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 35%, rgba(1, 3, 10, 0.65) 80%, #000207 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
 
-    /* Diálogo de la Propuesta */
-    #dialog{position:absolute;top:15%;left:50%;transform:translateX(-50%);width:min(780px,92vw);background:rgba(4,15,23,0.92);border:4px solid var(--teal);padding:clamp(18px,4vw,32px);text-align:center;font-family:'Press Start 2P',monospace;box-shadow:6px 6px 0 #000,0 0 35px rgba(13,245,183,0.4);z-index:30;backdrop-filter:blur(6px);transition:transform .6s,opacity .6s}
-    #dialog.minimized{transform:translateX(-50%) translateY(-150%);opacity:0;pointer-events:none}
-    .d-title{font-size:clamp(15px,3vw,26px);line-height:1.7;color:#fff;text-shadow:3px 3px #000;margin:15px 0}
-    .d-sub{font-size:clamp(8px,1.4vw,11px);line-height:2;color:#d1f7ee;margin-bottom:24px}
-    .actions{display:flex;flex-wrap:wrap;justify-content:center;gap:15px}
-    .r-btn{font-family:'Press Start 2P';font-size:clamp(10px,1.6vw,13px);padding:14px 22px;border:3px solid #fff;color:#fff;cursor:pointer;box-shadow:4px 4px 0 #000;text-transform:uppercase;transition:.1s}
-    .r-btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
-    .r-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
-    #btn-yes1{background:#e6005c;border-color:#ff99cc}
-    #btn-yes2{background:#008080;border-color:#80ffff}
+    /* Pantalla de Inicio / Portada Cósmica */
+    #screen-landing {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: radial-gradient(circle at center, #081a34 0%, #030814 65%, #000207 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s;
+      padding: 24px;
+      text-align: center;
+    }
+    #screen-landing.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
 
-    /* HUD del Viaje */
-    #hud{position:absolute;top:16px;left:18px;right:75px;z-index:35;display:none;justify-content:space-between;font-family:'Press Start 2P';pointer-events:none}
-    #hud.active{display:flex}
-    .hud-chip{background:rgba(3,12,18,0.85);border:2.5px solid var(--teal);padding:8px 12px;font-size:clamp(8px,1.3vw,10px);color:#fff;pointer-events:auto;box-shadow:3px 3px 0 #000}
-    #dim-btn{border-color:var(--magenta);color:#ffd6ff;cursor:pointer}
-    #dim-btn:hover{background:rgba(224,64,251,0.2)}
+    .emblem-core {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 22px;
+      animation: pulseCore 3.5s infinite alternate ease-in-out;
+    }
+    @keyframes pulseCore {
+      0% { transform: scale(0.95); filter: drop-shadow(0 0 15px var(--cyan)); }
+      100% { transform: scale(1.08) translateY(-6px); filter: drop-shadow(0 0 35px var(--pink)) drop-shadow(0 0 50px var(--cyan)); }
+    }
 
-    /* Toast del Multiverso */
-    #dim-toast{position:absolute;top:68px;left:50%;transform:translateX(-50%);width:min(720px,92vw);background:rgba(4,12,24,0.92);border:2px solid var(--cyan);padding:12px 18px;border-radius:6px;text-align:center;z-index:35;display:none;box-shadow:0 0 25px rgba(0,242,254,0.35);animation:fadeIn .5s}
-    @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-    .dim-t-step{font-size:8px;font-family:'Press Start 2P';color:var(--magenta);margin-bottom:4px}
-    .dim-t-title{font-family:'Cinzel';font-size:15px;color:var(--teal);font-weight:700;margin-bottom:4px}
-    .dim-t-lore{font-size:12px;color:#e8f9ff;font-style:italic;line-height:1.5}
+    .game-logo-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(28px, 5.5vw, 52px);
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--cyan) 45%, var(--pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(0, 242, 254, 0.6));
+      margin-bottom: 12px;
+    }
 
-    /* Controles Táctiles para Móvil */
-    #touch{position:absolute;bottom:20px;left:0;right:0;display:none;justify-content:space-between;padding:0 20px;z-index:40;pointer-events:none}
-    #touch.active{display:flex}
-    .t-grp{display:flex;gap:12px;pointer-events:auto}
-    .t-btn{width:54px;height:54px;border-radius:50%;background:rgba(8,26,36,0.8);border:2.5px solid var(--teal);color:#fff;font-family:'Press Start 2P';font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 #000}
-    .t-btn:active{transform:scale(0.92);background:rgba(13,245,183,0.3)}
-    .t-jump{border-color:var(--gold);color:var(--gold)}
-    .t-heart{border-color:var(--pink);color:var(--pink)}
-    .t-portal{border-color:var(--magenta);color:var(--magenta);font-size:13px}
+    .game-logo-sub {
+      font-size: clamp(12px, 2.2vw, 16px);
+      letter-spacing: 4px;
+      color: rgba(210, 245, 255, 0.8);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      max-width: 640px;
+      line-height: 1.6;
+    }
 
-    #letter-btn{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(4,18,28,0.9);border:2px solid var(--pink);color:#fff;font-family:'Press Start 2P';font-size:9px;padding:8px 16px;border-radius:18px;cursor:pointer;z-index:38;display:none;box-shadow:0 0 15px rgba(255,42,122,0.4)}
+    .btn-action-glow {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(13px, 2vw, 16px);
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #ffffff;
+      padding: 16px 44px;
+      border-radius: 40px;
+      background: rgba(0, 242, 254, 0.15);
+      border: 1.5px solid var(--cyan);
+      box-shadow: 0 0 30px rgba(0, 242, 254, 0.35);
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+    .btn-action-glow:hover {
+      background: rgba(0, 242, 254, 0.32);
+      transform: scale(1.05);
+      box-shadow: 0 0 50px var(--cyan);
+    }
 
-    /* Modal de Carta Final y Estadísticas */
-    #modal{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:rgba(2,8,18,0.94);padding:20px;font-family:'Press Start 2P';backdrop-filter:blur(10px)}
-    .modal-box{background:#061821;border:4px solid var(--teal);padding:clamp(20px,4vw,36px);text-align:center;max-width:640px;box-shadow:8px 8px 0 #000}
-    .m-title{font-size:clamp(13px,2.4vw,19px);color:var(--gold);margin-bottom:15px;line-height:1.5}
-    .m-heart{font-size:40px;color:var(--pink);animation:mbeat .8s infinite alternate}
-    @keyframes mbeat{to{transform:scale(1.2)}}
-    .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;font-size:8px;text-align:left}
-    .m-stat{background:rgba(0,0,0,0.6);border:1.5px solid var(--cyan);padding:8px 10px}
-    .m-msg{font-family:'Outfit';font-size:clamp(14px,2vw,17px);line-height:1.6;color:#e6f7ff;margin-top:14px;font-style:italic}
-    .m-navi{font-family:'Cinzel';font-size:15px;color:var(--teal);margin:12px 0 16px;font-weight:700}
-    .m-close{background:#111;border:2px solid #fff;color:#fff;font-family:'Press Start 2P';font-size:10px;padding:10px 18px;cursor:pointer}
-    .m-close:hover{background:var(--teal);color:#000}
-    #fx{position:fixed;inset:0;pointer-events:none;z-index:85}
+    /* Subtítulos Cinemáticos */
+    #cinematic-captions {
+      position: fixed;
+      bottom: 13.5%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(920px, 92vw);
+      text-align: center;
+      z-index: 30;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .caption-chapter {
+      font-size: 11px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 10px;
+      text-shadow: 0 0 15px var(--cyan);
+      font-weight: 700;
+    }
+
+    .caption-hero {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(20px, 3.8vw, 36px);
+      font-weight: 700;
+      line-height: 1.4;
+      color: #ffffff;
+      text-shadow: 0 0 25px rgba(0, 242, 254, 0.8);
+      margin-bottom: 14px;
+    }
+
+    .caption-body {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(14px, 2.2vw, 18px);
+      font-weight: 300;
+      line-height: 1.7;
+      color: rgba(230, 248, 255, 0.96);
+      font-style: italic;
+      max-width: 840px;
+      margin: 0 auto;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
+      background: rgba(2, 8, 20, 0.65);
+      padding: 12px 24px;
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+    }
+
+    .btn-cine-skip {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(4, 16, 32, 0.6);
+      border: 1px solid rgba(0, 242, 254, 0.35);
+      padding: 9px 18px;
+      border-radius: 22px;
+      z-index: 35;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+    .btn-cine-skip:hover {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      background: rgba(0, 242, 254, 0.2);
+    }
+
+    /* Flash de salto */
+    #warp-flash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #ffffff 10%, var(--cyan) 45%, #01040d 90%);
+      z-index: 80;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #warp-flash.active {
+      animation: wFlash 1.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    }
+    @keyframes wFlash {
+      0% { opacity: 0; transform: scale(0.6); }
+      25% { opacity: 1; transform: scale(1.1); filter: brightness(2.5); }
+      100% { opacity: 0; transform: scale(2.8); }
+    }
+
+    /* HUD del Juego */
+    #game-hud {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 35;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    #game-hud.active {
+      display: flex;
+    }
+
+    .hud-left-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+
+    .hud-card {
+      background: rgba(4, 15, 30, 0.85);
+      border: 1px solid rgba(0, 242, 254, 0.45);
+      border-radius: 20px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+    }
+
+    .hud-title {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(220, 245, 255, 0.6);
+    }
+    .hud-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .btn-hud-round {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(4, 15, 30, 0.85);
+      border: 1px solid rgba(0, 242, 254, 0.5);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+      transition: all 0.2s;
+      pointer-events: auto;
+    }
+    .btn-hud-round:hover {
+      background: rgba(0, 242, 254, 0.25);
+      transform: scale(1.08);
+    }
+
+    /* Notificación de Recuerdo */
+    #memory-toast {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(4, 16, 32, 0.95);
+      border: 1.5px solid var(--gold);
+      box-shadow: 0 0 40px rgba(255, 209, 102, 0.45);
+      border-radius: 25px;
+      padding: 14px 28px;
+      text-align: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: min(650px, 90vw);
+    }
+    #memory-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast-title {
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .toast-desc {
+      font-size: 13px;
+      font-style: italic;
+      color: #ffffff;
+      line-height: 1.5;
+    }
+
+    /* Controles Táctiles Mobile */
+    #touch-gamepad {
+      position: fixed;
+      bottom: 24px;
+      left: 20px;
+      right: 20px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 40;
+      pointer-events: none;
+    }
+    #touch-gamepad.active {
+      display: flex;
+    }
+
+    .gamepad-group {
+      display: flex;
+      gap: 16px;
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: rgba(4, 16, 32, 0.75);
+      border: 1.5px solid var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #ffffff;
+      backdrop-filter: blur(8px);
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.1s;
+    }
+    .touch-btn:active {
+      transform: scale(0.92);
+      background: rgba(0, 242, 254, 0.35);
+    }
+
+    /* =========================================================================
+       📸 OVERLAY DE REVELACIÓN DE LA FOTO Y PROPUESTA FINAL
+       ========================================================================= */
+    #photo-reveal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 2, 8, 0.96);
+      backdrop-filter: blur(24px);
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+    }
+    #photo-reveal-overlay.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .photo-card-glow {
+      background: linear-gradient(135deg, rgba(8, 20, 42, 0.95) 0%, rgba(28, 10, 36, 0.95) 100%);
+      border: 2px solid var(--gold);
+      border-radius: 32px;
+      padding: clamp(24px, 4vw, 44px);
+      max-width: 680px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 90px rgba(255, 209, 102, 0.45);
+      animation: popIn 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes popIn {
+      0% { transform: translateY(30px) scale(0.9); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .photo-frame-border {
+      position: relative;
+      width: min(340px, 75vw);
+      height: min(340px, 75vw);
+      margin: 0 auto 24px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 45px rgba(255, 209, 102, 0.5), 0 0 80px rgba(255, 42, 122, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #060b18;
+    }
+
+    .photo-frame-border img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 20px;
+      transition: transform 0.6s;
+    }
+    .photo-frame-border:hover img {
+      transform: scale(1.03);
+    }
+
+    #photo-upload-hint {
+      display: none;
+      position: absolute;
+      inset: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      background: rgba(4, 14, 28, 0.9);
+    }
+
+    .final-speech-quote {
+      font-size: clamp(14px, 2.2vw, 17px);
+      line-height: 1.8;
+      color: #eaf7ff;
+      font-style: italic;
+      margin-bottom: 24px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+    }
+
+    .final-prop-btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-prop {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(12px, 1.8vw, 15px);
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 15px 32px;
+      border-radius: 35px;
+      color: #ffffff;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s;
+    }
+    .btn-prop-yes {
+      background: linear-gradient(135deg, #e6005c, var(--pink));
+      box-shadow: 0 0 30px rgba(255, 42, 122, 0.6);
+    }
+    .btn-prop-yes:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px var(--pink);
+    }
+    .btn-prop-coop {
+      background: linear-gradient(135deg, #0084ff, var(--cyan));
+      box-shadow: 0 0 30px rgba(0, 242, 254, 0.6);
+    }
+    .btn-prop-coop:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px var(--cyan);
+    }
+
+    /* Modal Selector de Cinemáticas */
+    #cine-selector-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 75;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(1, 4, 12, 0.9);
+      backdrop-filter: blur(16px);
+      padding: 20px;
+    }
+    #cine-selector-modal.show {
+      display: flex;
+    }
+    .cine-menu-card {
+      background: rgba(4, 16, 32, 0.96);
+      border: 1.5px solid var(--cyan);
+      border-radius: 24px;
+      padding: 28px;
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 65px rgba(0, 242, 254, 0.35);
+    }
+    .cine-item-btn {
+      width: 100%;
+      padding: 13px 18px;
+      margin: 7px 0;
+      border-radius: 16px;
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .cine-item-btn:hover {
+      background: rgba(0, 242, 254, 0.25);
+      transform: translateX(4px);
+      border-color: var(--cyan);
+    }
+
+    /* Modal de Carta Final */
+    #endgame-letter-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(1, 4, 12, 0.94);
+      backdrop-filter: blur(20px);
+      padding: 24px;
+    }
+    #endgame-letter-modal.show {
+      display: flex;
+    }
+    .letter-sheet {
+      background: linear-gradient(135deg, rgba(6, 18, 38, 0.98) 0%, rgba(20, 8, 32, 0.98) 100%);
+      border: 2px solid var(--gold);
+      border-radius: 32px;
+      padding: clamp(26px, 4.5vw, 48px);
+      max-width: 840px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 95px rgba(255, 209, 102, 0.45);
+      animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
   </style>
 </head>
-<body>
+<body class="cinematic-mode">
 
-  <!-- PANTALLA DE INICIO -->
-  <div id="start-overlay">
-    <div class="seed-icon">
-      <svg viewBox="0 0 100 100" fill="none">
-        <circle cx="50" cy="50" r="14" fill="#00f2fe" opacity="0.9"/>
-        <path d="M50 50 Q30 20 20 10 M50 50 Q70 20 80 10 M50 50 Q20 40 10 50 M50 50 Q80 40 90 50 M50 50 Q35 75 25 85 M50 50 Q65 75 75 85" stroke="#caf0f8" stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <button class="start-btn" id="btn-start">Iniciar Viaje a Pandora</button>
-    <div class="start-sub">Una sorpresa para ti • Toca para conectar</div>
+  <canvas id="game-canvas"></canvas>
+  <div class="vignette-fx"></div>
+
+  <!-- Barras Panavision -->
+  <div class="cinema-bar" id="bar-top"></div>
+  <div class="cinema-bar" id="bar-bottom"></div>
+
+  <!-- Portada -->
+  <div id="screen-landing">
+    <svg class="emblem-core" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="46" stroke="url(#embG1)" stroke-width="3" stroke-dasharray="8 6"/>
+      <polygon points="50,15 80,75 20,75" stroke="url(#embG2)" stroke-width="2" fill="none"/>
+      <path d="M50,30 C56,22 68,22 74,30 C82,40 70,55 50,70 C30,55 18,40 26,30 C32,22 44,22 50,30 Z" fill="url(#embG3)" filter="drop-shadow(0 0 10px #ff2a7a)"/>
+      <defs>
+        <linearGradient id="embG1" x1="0" y1="0" x2="100" y2="100">
+          <stop offset="0%" stop-color="#00f2fe"/>
+          <stop offset="100%" stop-color="#ff2a7a"/>
+        </linearGradient>
+        <linearGradient id="embG2" x1="0" y1="0" x2="100" y2="100">
+          <stop offset="0%" stop-color="#ffd166"/>
+          <stop offset="100%" stop-color="#0df5b7"/>
+        </linearGradient>
+        <linearGradient id="embG3" x1="0" y1="0" x2="100" y2="100">
+          <stop offset="0%" stop-color="#ff2a7a"/>
+          <stop offset="100%" stop-color="#e040fb"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <h1 class="game-logo-title">MULTIVERSO DE ALMAS</h1>
+    <p class="game-logo-sub">Nuestro amor se representa en varios universos</p>
+    <button class="btn-action-glow" id="btn-start">INICIAR VIAJE CINEMÁTICO</button>
   </div>
 
-  <button id="sound-btn" title="Sonido">🔊</button>
-  <div id="click-hint">Toca en cualquier parte para avanzar</div>
+  <!-- Subtítulos Cinemáticos -->
+  <div id="cinematic-captions" style="display: none;">
+    <div class="caption-chapter" id="cap-chapter">ACTO I // EL ORIGEN</div>
+    <div class="caption-hero" id="cap-hero">«El planeta y el santuario cósmico»</div>
+    <div class="caption-body" id="cap-body">...</div>
+  </div>
 
-  <!-- CANVAS PROCEDURAL DEL ÁRBOL DE LAS ALMAS EN PANDORA -->
-  <canvas id="tree-canvas"></canvas>
+  <button class="btn-cine-skip" id="btn-skip-cine" style="display: none;">SALTAR CINEMÁTICA ▶</button>
+  <div id="warp-flash"></div>
 
-  <!-- FASE 1: CINEMÁTICA 3D CON NARRATIVA POÉTICA -->
-  <div id="scene-container">
-    <div id="camera-rig">
-      <div class="stage">
-
-        <div class="card" data-step="0">
-          <div class="badge">✦ El Refugio Solitario ✦</div>
-          <p class="poem">Antes de encontrarte, sentía que la vida era una travesía que debía librarse <span class="glow">en soledad</span>...</p>
-          <p class="subpoem">Había construido fortalezas de silencio, convencido de que vivir en constante defensiva era la única forma de no ser herido.</p>
+  <!-- HUD del Juego -->
+  <div id="game-hud">
+    <div class="hud-left-group">
+      <div class="hud-card">
+        <div>
+          <div class="hud-title">MUNDO ACTUAL</div>
+          <div class="hud-value" id="hud-world-name">1. PANDORA SAGRADA</div>
         </div>
-
-        <div class="card" data-step="1">
-          <div class="badge">✦ La Caída de las Armaduras ✦</div>
-          <p class="poem">Pensaba que amar significaba <span class="glow">perder el control</span>,</p>
-          <p class="subpoem">que bajar la guardia era rendirse... pero cuando tus ojos cruzaron mi camino, entendí que no era una rendición, sino el milagro de encontrar por fin un refugio.</p>
+      </div>
+      <div class="hud-card">
+        <div>
+          <div class="hud-title">VÍNCULO DE AMOR</div>
+          <div class="hud-value" id="hud-bond-val">20% ♥</div>
         </div>
-
-        <div class="card" data-step="2">
-          <div class="badge">✦ El Susurro de Eywa ✦</div>
-          <p class="poem">Como las semillas del Árbol de las Almas que eligen dónde posar su luz,</p>
-          <p class="subpoem">tu ternura desarmó cada uno de mis miedos. Me enseñaste que los lazos más sagrados no necesitan cadenas, sino libertad compartida.</p>
+      </div>
+      <div class="hud-card">
+        <div>
+          <div class="hud-title">RECUERDOS</div>
+          <div class="hud-value" id="hud-crystals-val">0 / 3</div>
         </div>
+      </div>
+    </div>
 
-        <div class="card" data-step="3">
-          <div class="badge">✦ Tsaheylu // El Latido Compartido ✦</div>
-          <p class="poem">Y hoy comprendo que <span class="glow">no quiero un camino solitario</span>,</p>
-          <p class="subpoem">ni victorias que no pueda celebrar a tu lado... porque contigo descubrí que cada amanecer es un universo nuevo por explorar.</p>
+    <div style="display: flex; gap: 10px; pointer-events: auto;">
+      <button class="btn-hud-round" id="btn-open-cine-menu" title="Ver Cinemáticas">🎬</button>
+      <button class="btn-hud-round" id="btn-reopen-letter" title="Carta Final">📜</button>
+      <button class="btn-hud-round" id="btn-toggle-sound" title="Alternar Sonido">🔊</button>
+    </div>
+  </div>
+
+  <!-- Notificación de Recuerdo Desbloqueado -->
+  <div id="memory-toast">
+    <div class="toast-title" id="toast-crystal-title">✦ RECUERDO DESBLOQUEADO ✦</div>
+    <div class="toast-desc" id="toast-crystal-desc">"El amor que vence cualquier distancia..."</div>
+  </div>
+
+  <!-- Controles Táctiles Mobile -->
+  <div id="touch-gamepad">
+    <div class="gamepad-group">
+      <div class="touch-btn" id="t-left">◀</div>
+      <div class="touch-btn" id="t-right">▶</div>
+    </div>
+    <div class="gamepad-group">
+      <div class="touch-btn" id="t-hand" title="Tomar de la mano" style="border-color:var(--pink); color:#ff99cc;">♥</div>
+      <div class="touch-btn" id="t-jump" title="Saltar" style="border-color:var(--gold); color:#ffe600;">▲</div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       📸 ESPACIO PARA TU FOTO AQUÍ
+       Para poner tu foto:
+       1. Reemplaza 'TU_FOTO_AQUI.jpg' con el nombre de tu foto en la misma carpeta
+       2. O usa el botón interactivo para cargarla directamente desde tu móvil o PC
+       ========================================================================= -->
+  <div id="photo-reveal-overlay">
+    <div class="photo-card-glow">
+      <div style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:5px; color:var(--gold); margin-bottom:12px; text-transform:uppercase;">
+        ✦ NUESTRA HISTORIA ETERNA ✦
+      </div>
+      
+      <div class="photo-frame-border">
+        <!-- 📸 TU FOTO VA AQUÍ (Reemplaza 'TU_FOTO_AQUI.jpg'): -->
+        <img id="special-couple-photo" src="TU_FOTO_AQUI.jpg" alt="Nuestro Momento Especial" onerror="this.style.display='none'; document.getElementById('photo-upload-hint').style.display='flex';">
+        <div id="photo-upload-hint">
+          <div style="font-size:38px; margin-bottom:8px;">📸♥</div>
+          <div style="font-weight:700; color:var(--gold); font-family:'Cinzel',serif; font-size:15px; letter-spacing:2px;">NUESTRA FOTO AQUÍ</div>
+          <p style="font-size:12px; color:#d2f0ff; margin:8px 0 14px; max-width:260px; line-height:1.5;">
+            Toca el botón para elegir tu foto favorita juntos desde tu galería, o edita 'TU_FOTO_AQUI.jpg' en el archivo.
+          </p>
+          <label class="btn-prop btn-prop-yes" style="font-size:11px; padding:10px 22px; cursor:pointer;">
+            SELECCIONAR FOTO 📷
+            <input type="file" accept="image/*" id="photo-file-input" style="display:none;">
+          </label>
         </div>
+      </div>
 
-        <div class="card" data-step="4">
-          <div class="badge">✦ La Verdad de Nuestras Almas ✦</div>
-          <h1 class="navi-title">Oel ngati kameie</h1>
-          <div style="font-family:'Cinzel';font-size:20px;letter-spacing:5px;color:#9eeeff">« Te Veo »</div>
-          <p class="subpoem" style="max-width:720px;margin-top:20px">Te veo no solo con mis ojos, sino con todo mi ser: veo tu luz infinita, tu dulzura y tu fuerza... y elijo caminar a tu lado en cada paso de esta vida.</p>
-        </div>
+      <p class="final-speech-quote">
+        "No sé qué nos depare el destino, pero quiero que seas tú.<br>
+        No importa si tengo que columpiarme entre rascacielos, no importa si tengo que luchar contra galaxias enteras... porque contigo siento una comodidad, una paz y un hogar que no encontré jamás."
+      </p>
 
+      <div style="font-family:'Cinzel',serif; font-size:clamp(18px, 3.4vw, 28px); color:var(--cyan); margin-bottom:24px; text-shadow:0 0 20px var(--cyan);">
+        ¿Quieres ser mi acompañante de aventuras para siempre?
+      </div>
+
+      <div class="final-prop-btn-row">
+        <button class="btn-prop btn-prop-yes" id="btn-final-yes">SÍ, ACEPTO CON TODO MI CORAZÓN ♥</button>
+        <button class="btn-prop btn-prop-coop" id="btn-final-coop">EN ESTE Y EN CADA UNIVERSO 🎮</button>
       </div>
     </div>
   </div>
 
-  <div id="dots">
-    <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-  </div>
-  <div id="warp"></div>
-
-  <!-- FASE 2 Y 3: MUNDO RETRO 8-BITS / 2-BITS CON EL VIAJE Y MINIJUEGO -->
-  <div id="retro-world">
-    <canvas id="game-canvas"></canvas>
-    <div class="scanlines"></div>
-
-    <div id="dialog">
-      <div style="color:var(--teal);font-size:9px;margin-bottom:12px">▶ VÍNCULO // ÁRBOL DE LAS ALMAS</div>
-      <h2 class="d-title">¿QUIERES SER MI<br>ACOMPAÑANTE DE AVENTURAS?</h2>
-      <p class="d-sub">Ha comenzado la expedición más hermosa de mi vida... y no quiero recorrer ningún mundo sin ti. ¿Aceptas presionar START y vivir esta historia juntos?</p>
-      <div class="actions">
-        <button class="r-btn" id="btn-yes1">SÍ, ACEPTO ♥ [START]</button>
-        <button class="r-btn" id="btn-yes2">SIEMPRE A TU LADO 🎮 [VÍNCULO]</button>
+  <!-- Modal Selector de Cinemáticas -->
+  <div id="cine-selector-modal">
+    <div class="cine-menu-card">
+      <div style="font-family:'Cinzel',serif; font-size:18px; color:var(--cyan); margin-bottom:16px; letter-spacing:2px;">
+        ✦ ARCHIVO CINEMATOGRÁFICO MULTIVERSAL ✦
       </div>
-    </div>
-
-    <div id="hud">
-      <div class="hud-chip" id="dim-btn">UNIVERSO: <span id="dim-name" style="color:var(--magenta)">1. PANDORA</span> (ENTRA AL PORTAL)</div>
-      <div class="hud-chip">VÍNCULO: <span id="heart-pts" style="color:var(--gold)">25% ♥</span></div>
-    </div>
-
-    <div id="dim-toast">
-      <div class="dim-t-step" id="toast-step">MUNDO 1 DE 4</div>
-      <div class="dim-t-title" id="toast-title">ALMAS DE PANDORA (NA'VI)</div>
-      <div class="dim-t-lore" id="toast-lore">"En este bosque sagrado aprendimos a bajar la guardia y vernos por primera vez con el alma."</div>
-    </div>
-
-    <button id="letter-btn">📜 CARTA DE AMOR</button>
-
-    <div id="touch">
-      <div class="t-grp">
-        <div class="t-btn" id="t-left">◀</div>
-        <div class="t-btn" id="t-right">▶</div>
-      </div>
-      <div class="t-grp">
-        <div class="t-btn t-portal" id="t-portal" title="Cruzar Portal">🌀</div>
-        <div class="t-btn t-heart" id="t-heart">♥</div>
-        <div class="t-btn t-jump" id="t-jump">▲</div>
-      </div>
+      <button class="cine-item-btn" onclick="playSpecificCinematic(0)">
+        <span>1. Pandora Sagrada (El Planeta y Eywa)</span> <span>▶</span>
+      </button>
+      <button class="cine-item-btn" onclick="playSpecificCinematic(1)">
+        <span>2. Nueva York (Spider-Man & Gwen Stacy)</span> <span>▶</span>
+      </button>
+      <button class="cine-item-btn" onclick="playSpecificCinematic(2)">
+        <span>3. Cosmos (Star-Lord & Gamora)</span> <span>▶</span>
+      </button>
+      <button class="cine-item-btn" onclick="playSpecificCinematic(3)">
+        <span>4. La Dimensión del Alma (Wanda & Visión)</span> <span>▶</span>
+      </button>
+      <button class="cine-item-btn" onclick="playSpecificCinematic(4)">
+        <span>5. El Destino Final (Iron Man & Pepper)</span> <span>▶</span>
+      </button>
+      <button class="cine-item-btn" onclick="playClimaxCinematic()" style="background:rgba(255,42,122,0.2); border-color:var(--pink);">
+        <span>✦ CLÍMAX: ELLA Y YO (Propuesta & Niños)</span> <span>♥</span>
+      </button>
+      <button class="btn-prop btn-prop-coop" id="btn-close-cine-menu" style="margin-top:16px; width:100%;">CERRAR</button>
     </div>
   </div>
 
-  <!-- MODAL DE CARTA FINAL -->
-  <div id="modal">
-    <div class="modal-box">
-      <div class="m-title">★ ¡ACOMPAÑANTE CONECTADA! ★</div>
-      <div class="m-heart">♥</div>
-      <div class="m-grid">
-        <div class="m-stat"><span style="color:#80ffff">ESTADO:</span> JUNTOS SIEMPRE</div>
-        <div class="m-stat"><span style="color:#80ffff">VÍNCULO:</span> 100% ETERNO</div>
-        <div class="m-stat"><span style="color:#80ffff">VIDAS:</span> ∞ INFINITAS</div>
-        <div class="m-stat"><span style="color:#80ffff">MODO:</span> CO-OP MULTIVERSAL</div>
+  <!-- Modal Final de Celebración -->
+  <div id="endgame-letter-modal">
+    <div class="letter-sheet">
+      <div style="font-family:'Cinzel',serif; font-size:clamp(22px, 3.8vw, 34px); color:var(--gold); margin-bottom:12px; letter-spacing:4px; font-weight:900;">
+        ★ VÍNCULO MULTIVERSAL 100% ★
       </div>
-      <p class="m-msg">"Ahora sí, mi pequeña... en cualquier universo, con cualquier traje y bajo cualquier cielo, siempre serás mi persona favorita. Ya puedes controlar a los dos personajitos, caminar hacia el portal de la derecha y ver cómo nuestro amor crece en cada realidad."</p>
-      <div class="m-navi">Oel ngati kameie por siempre ♥</div>
-      <button class="m-close" id="btn-close-modal">VOLVER AL VIAJE 🎮</button>
+      <div style="font-size:clamp(16px, 2.5vw, 22px); color:var(--cyan); letter-spacing:3px; margin-bottom:16px; font-family:'Cinzel',serif;">
+        «TE AMO 10 MILLONES»
+      </div>
+      <div style="font-size:48px; color:var(--pink); margin:12px 0; animation:pulseCore 1.5s infinite alternate;">♥</div>
+      <p style="font-size:clamp(14px, 2vw, 17px); line-height:1.8; color:#edf7ff; font-style:italic; margin-bottom:24px; max-width:700px; margin-left:auto; margin-right:auto;">
+        "Así como Jake vio a Neytiri en las raíces sagradas de Eywa...<br>
+        Así como Peter le prometió a Gwen: «Tú nunca estarás sola cuando yo esté aquí»...<br>
+        Así como Peter Quill reconoció que Gamora era su mayor debilidad y su hogar entre las estrellas...<br>
+        Así como Visión le enseñó a Wanda que el amor persevera más allá de cualquier dolor...<br>
+        Y así como Tony Stark cruzó el tiempo para regresar con Pepper y decirle «Te amo 10 millones»...<br><br>
+        Nuestro amor vive y resplandece en cada dimensión. Gracias por ser mi mayor aventura."
+      </p>
+      <div style="font-family:'Cinzel',serif; font-size:16px; color:var(--emerald); letter-spacing:4px; margin-bottom:26px;">
+        OEL NGATI KAMEIE • POR TODA LA ETERNIDAD
+      </div>
+      <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+        <button class="btn-prop btn-prop-yes" onclick="playClimaxCinematic()">VER GRAN PROPUESTA Y FOTO ♥</button>
+        <button class="btn-prop btn-prop-coop" id="btn-close-letter">SEGUIR JUGANDO JUNTOS 🎮</button>
+      </div>
     </div>
   </div>
-
-  <canvas id="fx"></canvas>
 
   <script>
-    /* 1. SINTETIZADOR DE AUDIO */
-    class SoundEngine {
-      constructor(){
-        this.ctx=null;this.muted=false;this.ambient=null;this.chip=null;this.timer=null;
+    /* ==========================================================================
+       1. MOTOR DE AUDIO SINTETIZADO (Web Audio API)
+       ========================================================================== */
+    class CosmicAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+        this.master = null;
+        this.ambientGain = null;
+        this.themeGain = null;
+        this.melodyInterval = null;
       }
-      init(){
-        if(this.ctx)return;
-        const AC=window.AudioContext||window.webkitAudioContext;
-        this.ctx=new AC();
-        this.master=this.ctx.createGain();this.master.gain.value=0.75;
+      init() {
+        if (this.ctx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.8;
         this.master.connect(this.ctx.destination);
-        this.ambient=this.ctx.createGain();this.ambient.gain.value=0;
-        this.ambient.connect(this.master);
-        this.chip=this.ctx.createGain();this.chip.gain.value=0;
-        this.chip.connect(this.master);
-        this.playPandoraAmbience();
-      }
-      toggleMute(){
-        if(!this.ctx)return;
-        this.muted=!this.muted;
-        this.master.gain.setTargetAtTime(this.muted?0:0.75,this.ctx.currentTime,0.05);
-        return this.muted;
-      }
-      playPandoraAmbience(){
-        const freqs=[92.5,138.6,185,277.2,370];
-        freqs.forEach((f,i)=>{
-          const osc=this.ctx.createOscillator(),g=this.ctx.createGain(),flt=this.ctx.createBiquadFilter();
-          osc.type=i%2===0?'sine':'triangle';osc.frequency.value=f;
-          flt.type='lowpass';flt.frequency.value=550+i*100;
-          g.gain.value=0.05/(i+1);
-          osc.connect(flt);flt.connect(g);g.connect(this.ambient);osc.start();
-        });
-        this.ambient.gain.linearRampToValueAtTime(0.85,this.ctx.currentTime+3);
-      }
-      chime(step){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime;
-        const triads=[[554,830],[587,880],[659,987],[740,1108],[880,1318]];
-        const t=triads[step%triads.length];
-        t.forEach((f,i)=>{
-          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
-          o.type='sine';o.frequency.value=f;
-          g.gain.setValueAtTime(0,now+i*0.06);
-          g.gain.linearRampToValueAtTime(0.2,now+i*0.06+0.03);
-          g.gain.exponentialRampToValueAtTime(0.001,now+i*0.06+2);
-          o.connect(g);g.connect(this.master);o.start(now+i*0.06);o.stop(now+i*0.06+2.1);
-        });
-      }
-      heartbeat(){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();
-        o.type='sine';o.frequency.setValueAtTime(60,now);o.frequency.exponentialRampToValueAtTime(28,now+0.6);
-        g.gain.setValueAtTime(0.4,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.6);
-        o.connect(g);g.connect(this.master);o.start(now);o.stop(now+0.65);
-      }
-      warpNoise(){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime;
-        this.ambient.gain.linearRampToValueAtTime(0,now+1);
-        const bSize=this.ctx.sampleRate*1.8,b=this.ctx.createBuffer(1,bSize,this.ctx.sampleRate),d=b.getChannelData(0);
-        for(let i=0;i<bSize;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(this.ctx.sampleRate*0.4));
-        const src=this.ctx.createBufferSource();src.buffer=b;
-        const flt=this.ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.setValueAtTime(4000,now);flt.frequency.exponentialRampToValueAtTime(100,now+1.8);
-        const ng=this.ctx.createGain();ng.gain.setValueAtTime(0.65,now);ng.gain.exponentialRampToValueAtTime(0.001,now+1.9);
-        src.connect(flt);flt.connect(ng);ng.connect(this.master);src.start(now);
-      }
-      startChiptune(){
-        if(!this.ctx)return;
-        this.chip.gain.linearRampToValueAtTime(0.22,this.ctx.currentTime+1);
-        const melody=[523,659,784,1046,784,659,880,1046,1318,1046,880,784,698,880,1046,880,698,659,587,784,988,784,587,523];
-        const bass=[130,130,174,174,220,220,196,196];
-        let tick=0;clearInterval(this.timer);
-        this.timer=setInterval(()=>{
-          if(this.muted||!this.ctx)return;
-          const now=this.ctx.currentTime;
-          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
-          o.type='square';o.frequency.value=melody[tick%melody.length];
-          g.gain.setValueAtTime(0.12,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.16);
-          o.connect(g);g.connect(this.chip);o.start(now);o.stop(now+0.17);
 
-          if(tick%2===0){
-            const bo=this.ctx.createOscillator(),bg=this.ctx.createGain();
-            bo.type='triangle';bo.frequency.value=bass[Math.floor(tick/2)%bass.length];
-            bg.gain.setValueAtTime(0.18,now);bg.gain.exponentialRampToValueAtTime(0.001,now+0.3);
-            bo.connect(bg);bg.connect(this.chip);bo.start(now);bo.stop(now+0.32);
+        this.ambientGain = this.ctx.createGain();
+        this.ambientGain.gain.value = 0;
+        this.ambientGain.connect(this.master);
+
+        this.themeGain = this.ctx.createGain();
+        this.themeGain.gain.value = 0;
+        this.themeGain.connect(this.master);
+
+        this.startAmbientPads();
+      }
+      toggleMute() {
+        if (!this.ctx) return false;
+        this.isMuted = !this.isMuted;
+        this.master.gain.setTargetAtTime(this.isMuted ? 0 : 0.8, this.ctx.currentTime, 0.05);
+        return this.isMuted;
+      }
+      startAmbientPads() {
+        const freqs = [82.4, 123.5, 164.8, 246.9, 329.6]; // E Dorian
+        freqs.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const filter = this.ctx.createBiquadFilter();
+          const gain = this.ctx.createGain();
+          osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+          osc.frequency.value = f;
+          filter.type = 'lowpass';
+          filter.frequency.value = 450 + idx * 80;
+          gain.gain.value = 0.08 / (idx + 1);
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ambientGain);
+          osc.start();
+        });
+        this.ambientGain.gain.linearRampToValueAtTime(0.7, this.ctx.currentTime + 3);
+      }
+      playChime(noteIndex) {
+        if (!this.ctx || this.isMuted) return;
+        const scale = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+        const f = scale[noteIndex % scale.length];
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now);
+        g.gain.setValueAtTime(0.22, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+        osc.connect(g);
+        g.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 2.6);
+      }
+      playHeartPulse() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(65, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.6);
+        g.gain.setValueAtTime(0.5, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+        osc.connect(g);
+        g.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 0.68);
+      }
+      playJump() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(740, now + 0.15);
+        g.gain.setValueAtTime(0.18, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(g);
+        g.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+      playCollect() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        [659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.06);
+          g.gain.setValueAtTime(0.2, now + i * 0.06);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.35);
+          osc.connect(g);
+          g.connect(this.master);
+          osc.start(now + i * 0.06);
+          osc.stop(now + i * 0.06 + 0.38);
+        });
+      }
+      playPortal() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.8);
+        g.gain.setValueAtTime(0.25, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+        osc.connect(g);
+        g.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 0.88);
+      }
+      startGameplayTheme() {
+        if (!this.ctx) return;
+        this.themeGain.gain.linearRampToValueAtTime(0.45, this.ctx.currentTime + 2);
+        if (this.melodyInterval) clearInterval(this.melodyInterval);
+        const notes = [329.6, 392.0, 440.0, 493.88, 587.33, 659.25];
+        let step = 0;
+        this.melodyInterval = setInterval(() => {
+          if (this.isMuted || !this.ctx) return;
+          if (step % 2 === 0) {
+            const f = notes[(step * 3) % notes.length];
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now);
+            g.gain.setValueAtTime(0.08, now);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+            osc.connect(g);
+            g.connect(this.themeGain);
+            osc.start(now);
+            osc.stop(now + 1.25);
           }
-          tick++;
-        },175);
-      }
-      jumpSfx(){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();
-        o.type='square';o.frequency.setValueAtTime(240,now);o.frequency.exponentialRampToValueAtTime(680,now+0.12);
-        g.gain.setValueAtTime(0.15,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.13);
-        o.connect(g);g.connect(this.master);o.start(now);o.stop(now+0.14);
-      }
-      heartSfx(){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime;
-        [523,659,784,1046].forEach((f,i)=>{
-          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
-          o.type='triangle';o.frequency.value=f;
-          g.gain.setValueAtTime(0.2,now+i*0.05);g.gain.exponentialRampToValueAtTime(0.001,now+i*0.05+0.22);
-          o.connect(g);g.connect(this.master);o.start(now+i*0.05);o.stop(now+i*0.05+0.25);
-        });
-      }
-      portalSfx(){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();
-        o.type='sawtooth';o.frequency.setValueAtTime(220,now);o.frequency.linearRampToValueAtTime(950,now+0.25);
-        g.gain.setValueAtTime(0.22,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.35);
-        o.connect(g);g.connect(this.master);o.start(now);o.stop(now+0.38);
-      }
-      fanfare(){
-        if(!this.ctx||this.muted)return;
-        const now=this.ctx.currentTime;
-        [{f:523,d:.1,t:0},{f:659,d:.1,t:.12},{f:784,d:.1,t:.24},{f:1046,d:.4,t:.36}].forEach(item=>{
-          const o=this.ctx.createOscillator(),g=this.ctx.createGain();
-          o.type='square';o.frequency.value=item.f;
-          g.gain.setValueAtTime(0.25,now+item.t);g.gain.exponentialRampToValueAtTime(0.001,now+item.t+item.d);
-          o.connect(g);g.connect(this.master);o.start(now+item.t);o.stop(now+item.t+item.d+0.05);
-        });
+          step++;
+        }, 600);
       }
     }
-    const audio=new SoundEngine();
 
-    /* 2. ÁRBOL DE LAS ALMAS PROCEDURAL Y ACERCAMIENTO DINÁMICO */
-    const treeCanvas=document.getElementById('tree-canvas'),tCtx=treeCanvas.getContext('2d');
-    let tW=treeCanvas.width=window.innerWidth,tH=treeCanvas.height=window.innerHeight;
-    window.addEventListener('resize',()=>{tW=treeCanvas.width=window.innerWidth;tH=treeCanvas.height=window.innerHeight});
+    const sound = new CosmicAudioEngine();
 
-    let treeScale=0.68,treeTargetScale=0.68,treeTick=0;
-    const treeScaleSteps=[0.68,0.85,1.05,1.30,1.65];
+    /* ==========================================================================
+       2. CANVAS Y ENTORNO VISUAL
+       ========================================================================== */
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let W = canvas.width = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
 
-    // Semillas Atokirina
-    const seeds=Array.from({length:32},()=>({
-      x:Math.random()*tW,y:Math.random()*tH,vy:-0.4-Math.random()*0.6,vx:(Math.random()-.5)*0.5,
-      size:6+Math.random()*9,p:Math.random()*6,alpha:0.4+Math.random()*0.5
-    }));
-
-    function loopIntroTree(){
-      treeTick++;
-      treeScale+=(treeTargetScale-treeScale)*0.04;
-      tCtx.clearRect(0,0,tW,tH);
-
-      const grad=tCtx.createRadialGradient(tW*0.5,tH*0.5,50,tW*0.5,tH*0.5,Math.max(tW,tH)*0.8);
-      grad.addColorStop(0,'#051833');grad.addColorStop(0.6,'#030b1c');grad.addColorStop(1,'#01040a');
-      tCtx.fillStyle=grad;tCtx.fillRect(0,0,tW,tH);
-
-      tCtx.save();
-      tCtx.translate(tW*0.5,tH*0.82);
-      tCtx.scale(treeScale,treeScale);
-
-      // Resplandor del núcleo sagrado
-      const core=tCtx.createRadialGradient(0,-180,30,0,-180,340);
-      core.addColorStop(0,'rgba(0,242,254,0.4)');core.addColorStop(0.5,'rgba(224,64,251,0.2)');core.addColorStop(1,'transparent');
-      tCtx.fillStyle=core;tCtx.beginPath();tCtx.arc(0,-180,340,0,Math.PI*2);tCtx.fill();
-
-      // Tronco ancestral retorcido
-      tCtx.fillStyle='#041716';
-      tCtx.beginPath();
-      tCtx.moveTo(-45,0);tCtx.quadraticCurveTo(-30,-120,-15,-220);tCtx.lineTo(15,-220);
-      tCtx.quadraticCurveTo(30,-120,45,0);tCtx.fill();
-
-      // Ramas principales
-      tCtx.strokeStyle='#041716';tCtx.lineWidth=22;tCtx.lineCap='round';
-      tCtx.beginPath();tCtx.moveTo(0,-200);tCtx.quadraticCurveTo(-120,-260,-220,-230);tCtx.stroke();
-      tCtx.beginPath();tCtx.moveTo(0,-200);tCtx.quadraticCurveTo(120,-260,220,-230);tCtx.stroke();
-      tCtx.beginPath();tCtx.moveTo(0,-210);tCtx.quadraticCurveTo(0,-300,-80,-350);tCtx.stroke();
-      tCtx.beginPath();tCtx.moveTo(0,-210);tCtx.quadraticCurveTo(0,-300,80,-350);tCtx.stroke();
-
-      // Vetas bioluminiscentes en el tronco
-      tCtx.fillStyle='#00f2fe';
-      for(let i=0;i<8;i++){
-        const oy=-20-i*24,ox=Math.sin(treeTick*0.04+i)*12;
-        tCtx.fillRect(ox-5,oy,8,14);
-      }
-
-      // Sauce sagrado (Zarcillos bioluminiscentes colgantes)
-      const fronds=48;
-      for(let i=0;i<fronds;i++){
-        const rx=-260+(i/fronds)*520;
-        const ry=-220-Math.sin((i/fronds)*Math.PI)*90;
-        const len=140+Math.sin(i*1.8)*55;
-        const sway=Math.sin(treeTick*0.035+i*0.35)*22;
-
-        tCtx.strokeStyle=i%2===0?'#ffffff':(i%3===0?'#e040fb':'#00f2fe');
-        tCtx.lineWidth=2.2;
-        tCtx.beginPath();tCtx.moveTo(rx,ry);
-        tCtx.quadraticCurveTo(rx+sway*0.5,ry+len*0.5,rx+sway,ry+len);
-        tCtx.stroke();
-
-        tCtx.fillStyle='#ffffff';
-        tCtx.beginPath();tCtx.arc(rx+sway,ry+len,2.5,0,Math.PI*2);tCtx.fill();
-      }
-      tCtx.restore();
-
-      // Semillas Atokirinas flotando en el ambiente
-      seeds.forEach(s=>{
-        s.p+=0.03;s.y+=s.vy;s.x+=s.vx+Math.sin(s.p)*0.4;
-        if(s.y<-40)s.y=tH+20;
-        tCtx.save();tCtx.translate(s.x,s.y);
-        tCtx.fillStyle=`rgba(0,242,254,${s.alpha*(0.7+Math.sin(s.p)*0.3)})`;
-        tCtx.beginPath();tCtx.arc(0,0,s.size,0,Math.PI*2);tCtx.fill();
-        tCtx.strokeStyle='rgba(220,245,255,0.75)';tCtx.lineWidth=1.2;
-        for(let i=0;i<6;i++){
-          const a=(i/6)*Math.PI*2;
-          tCtx.beginPath();tCtx.moveTo(0,0);
-          tCtx.quadraticCurveTo(Math.cos(a)*10,Math.sin(a)*10,Math.cos(a)*18,Math.sin(a)*18+6);
-          tCtx.stroke();
-        }
-        tCtx.restore();
-      });
-
-      requestAnimationFrame(loopIntroTree);
-    }
-    loopIntroTree();
-
-    /* 3. CINEMÁTICA Y NARRATIVA 3D CON DOLLY ZOOM */
-    const rig=document.getElementById('camera-rig'),cards=document.querySelectorAll('.card');
-    const dots=document.querySelectorAll('.dot');
-    let step=-1,storyTimer=null;
-    const camZ=[0,120,240,380,540];
-
-    function goStep(idx){
-      if(idx>=cards.length){triggerWarp();return}
-      step=idx;
-      rig.style.transform=`translateZ(${camZ[step]}px)`;
-      treeTargetScale=treeScaleSteps[step];
-
-      cards.forEach((c,i)=>{
-        c.classList.remove('active','past');
-        if(i===step)c.classList.add('active');
-        else if(i<step)c.classList.add('past');
-      });
-      dots.forEach((d,i)=>{
-        d.classList.remove('active');
-        if(i===step)d.classList.add('active');
-      });
-      audio.chime(step);audio.heartbeat();
-    }
-
-    const durations=[5500,5600,6000,6200,7500];
-    function schedule(idx){
-      if(idx>=cards.length-1){
-        storyTimer=setTimeout(triggerWarp,durations[idx]);return;
-      }
-      storyTimer=setTimeout(()=>{goStep(idx+1);schedule(idx+1)},durations[idx]);
-    }
-
-    document.addEventListener('click',e=>{
-      if(e.target.closest('button')||step<0||step>=cards.length)return;
-      clearTimeout(storyTimer);goStep(step+1);
-      if(step<cards.length-1)schedule(step);
-      else if(step===cards.length-1)storyTimer=setTimeout(triggerWarp,durations[step]);
+    window.addEventListener('resize', () => {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
     });
 
-    function triggerWarp(){
-      document.getElementById('dots').style.display='none';
-      document.getElementById('click-hint').style.display='none';
-      audio.warpNoise();
-      document.getElementById('warp').classList.add('active');
-      rig.style.transition='transform 1.4s,filter 1.2s';
-      rig.style.transform='translateZ(1400px) scale(1.8)';
-      rig.style.filter='blur(20px)';
-      setTimeout(()=>{
-        document.getElementById('scene-container').style.display='none';
-        treeCanvas.style.display='none';
-        document.getElementById('retro-world').classList.add('active');
-        initGame();audio.startChiptune();
-      },1200);
-    }
+    const camera = {
+      x: 0,
+      y: 0,
+      targetX: 0,
+      targetY: 0,
+      zoom: 1,
+      targetZoom: 1,
+      shake: 0
+    };
 
-    /* 4. MOTOR MULTIVERSO CON ÁRBOL DE 2-BITS Y PORTAL DE VIAJE */
-    const gCanvas=document.getElementById('game-canvas'),gCtx=gCanvas.getContext('2d');
-    let gW=gCanvas.width=window.innerWidth,gH=gCanvas.height=window.innerHeight;
-    let ground=gH*0.78;
-    window.addEventListener('resize',()=>{gW=gCanvas.width=window.innerWidth;gH=gCanvas.height=window.innerHeight;ground=gH*0.78});
+    let gameMode = 'LANDING';
+    let globalTick = 0;
 
-    const WORLDS=[
+    let climaxState = {
+      active: false,
+      isGrayscale: false,
+      isChibiKids: false,
+      colorBurstWave: 0,
+      showWitnessCircle: false
+    };
+
+    /* ==========================================================================
+       3. BASE DE DATOS DE UNIVERSOS Y CINEMÁTICAS PROFUNDAS
+       ========================================================================== */
+    const WORLDS_DATA = [
       {
-        stepLabel:"MUNDO 1 DE 4 • EL DESPERTAR DEL VÍNCULO",
-        name:"1. PANDORA",
-        title:"ALMAS DE PANDORA (NA'VI)",
-        lore:"«En este bosque sagrado aprendimos a bajar la guardia y vernos por primera vez con el alma.»",
-        bond:25,
-        p1Color:'#00b4d8',p2Color:'#48cae4',type:'navi',
-        bgTheme:'#05221d',skyTheme:'#020612'
+        id: 0,
+        name: "1. PANDORA SAGRADA",
+        bond: "20% ♥",
+        theme: "navi",
+        skyDark: "#020712",
+        skyMid: "#06182c",
+        p1Light: "#00f2fe",
+        p2Light: "#e040fb",
+        groundColor: "#041517",
+        groundBorder: "#0df5b7",
+        memories: [
+          "Recuerdo 1: El día que tus ojos me miraron por primera vez y el mundo entero guardó silencio.",
+          "Recuerdo 2: Aprender que bajar la guardia contigo no era perderse, sino ganar un hogar.",
+          "Recuerdo 3: Oel ngati kameie... no solo te veo, reconozco mi destino en tu alma."
+        ],
+        cinematic: [
+          {
+            chap: "ACTO I // EL PLANETA POLIFEMO Y EL VACÍO CÓSMICO",
+            hero: "«Creía que la soledad era mi única armadura»",
+            body: "En un universo inmenso y frío, solía levantar murallas de silencio para protegerme. Pensaba que vivir a la defensiva era la única forma de no salir herido...",
+            camX: 360,
+            camY: -350,
+            camZ: 0.65,
+            dur: 6500
+          },
+          {
+            chap: "ACTO II // LAS MONTAÑAS FLOTANTES DE PANDORA",
+            hero: "«Pensaba que amar significaba perder el control»",
+            body: "Creía que rendir el corazón era una debilidad. Pero al cruzar estas islas que flotan sin caer, comprendí que la ternura no te despoja de fuerza: te enseña a volar.",
+            camX: 80,
+            camY: -140,
+            camZ: 0.85,
+            dur: 6500
+          },
+          {
+            chap: "ACTO III // EL SANTUARIO DEL ÁRBOL DE LAS ALMAS",
+            hero: "«Como las semillas sagradas que eligen dónde posarse»",
+            body: "Tu dulzura desarmó cada una de mis dudas. Eywa susurra entre los sauces luminosos que las conexiones más profundas se construyen en libertad, complicidad y respeto mutuo.",
+            camX: 480,
+            camY: 190,
+            camZ: 1.15,
+            dur: 6800
+          },
+          {
+            chap: "ACTO IV // TSAHEYLU",
+            hero: "«Oel ngati kameie • Te Veo con el Alma»",
+            body: "No solo te miro: veo tu luz, tu valentía, tus silencios y tu bondad. En este planeta y en cualquier rincón del cosmos, elijo caminar a tu lado.",
+            camX: 200,
+            camY: 280,
+            camZ: 1.45,
+            dur: 7500
+          }
+        ]
       },
       {
-        stepLabel:"MUNDO 2 DE 4 • CONFIANZA EN LA OSCURIDAD",
-        name:"2. GOTHAM",
-        title:"SOMBRAS DE GOTHAM (VIGILANTE & FELINA)",
-        lore:"«Incluso en la noche más caótica y solitaria, aprendimos a cuidarnos las espaldas sin miedo.»",
-        bond:50,
-        p1Color:'#1c1c24',p2Color:'#242430',type:'bat',
-        bgTheme:'#12121e',skyTheme:'#080811'
+        id: 1,
+        name: "2. NUEVA YORK // SPIDER & GWEN",
+        bond: "40% ♥",
+        theme: "spidey_gwen",
+        skyDark: "#060414",
+        skyMid: "#180c2e",
+        p1Light: "#ff2a4b",
+        p2Light: "#0df5b7",
+        groundColor: "#0d0b1a",
+        groundBorder: "#ff2a4b",
+        memories: [
+          "Recuerdo 1: «Tú nunca estarás sola cuando yo esté aquí...»",
+          "Recuerdo 2: Enredados en un salto de fe que desafiaba la gravedad sobre los tejados.",
+          "Recuerdo 3: Cuando nuestras miradas chocaron y supe que jamás te soltaría la mano."
+        ],
+        cinematic: [
+          {
+            chap: "ACTO V // EL SALTO DE FE EN LA AZOTEA",
+            hero: "«Cuando Peter y Gwen se encuentran bajo la luna»",
+            body: "«En medio del vértigo de una ciudad inmensa y fría, dos almas colisionaron en una cornisa sobre las estrellas. El viento soplaba fuerte, pero al chocar sus miradas, el miedo a la caída desapareció por completo...»",
+            camX: 490,
+            camY: -220,
+            camZ: 0.8,
+            dur: 7000
+          },
+          {
+            chap: "ACTO VI // LA PROMESA ARÁCNIDA",
+            hero: "«Tú nunca estarás sola cuando yo esté aquí»",
+            body: "«Peter la tomó de la mano con una ternura infinita y le dijo: 'Tú nunca estarás sola cuando yo esté aquí... No importa cuán alto sea el salto, no importa la tormenta: enredados en risas que desafían la gravedad, siempre estaré para sostenerte'.»",
+            camX: 240,
+            camY: 280,
+            camZ: 1.45,
+            dur: 8000
+          }
+        ]
       },
       {
-        stepLabel:"MUNDO 3 DE 4 • CONEXIÓN ENTRE ESTRELLAS",
-        name:"3. COSMOS",
-        title:"GUARDIANES ESTELARES (SABLES DE LUZ)",
-        lore:"«A través de galaxias enteras e infinitas distancias cósmicas, la Fuerza siempre nos devuelve al mismo punto: juntos.»",
-        bond:75,
-        p1Color:'#7f5539',p2Color:'#e9ecef',type:'jedi',
-        bgTheme:'#1a0d2b',skyTheme:'#080214'
+        id: 2,
+        name: "3. COSMOS GUARDIANES",
+        bond: "60% ♥",
+        theme: "guardians",
+        skyDark: "#0c0418",
+        skyMid: "#2c0e3e",
+        p1Light: "#ff7700",
+        p2Light: "#2ecc71",
+        groundColor: "#140824",
+        groundBorder: "#e040fb",
+        memories: [
+          "Recuerdo 1: «Ella es mi única debilidad... y la amo como a nadie en la galaxia.»",
+          "Recuerdo 2: Cruzar nebulosas infinitas solo para bailar con una vieja canción a tu lado.",
+          "Recuerdo 3: Así como Peter ama a Gamora, yo te amo con todo mi corazón."
+        ],
+        cinematic: [
+          {
+            chap: "ACTO VII // LA NEBULOSA Y EL WALKMAN",
+            hero: "«Peter hablando de Gamora en los confines del cosmos»",
+            body: "«Peter ajusta su cassette mientras la música de su madre llena el silencio del espacio. Mira a las estrellas lejanas y confiesa: 'He recorrido galaxias enteras, enfrenté titanes y mercenarios... pero ella es mi única debilidad. La amo de una manera que desarma a cualquier forajido de las estrellas'.»",
+            camX: 420,
+            camY: -280,
+            camZ: 0.8,
+            dur: 8000
+          },
+          {
+            chap: "ACTO VIII // LA DECLARACIÓN CÓSMICA",
+            hero: "«Nuestro amor se representa en varios universos»",
+            body: "«Así como Peter ama a Gamora, yo te amo con todo mi corazón... Nuestro amor se representa en varios universos, desafiando cualquier distancia estelar, cualquier tiempo y cualquier realidad.»",
+            camX: 240,
+            camY: 280,
+            camZ: 1.45,
+            dur: 8500
+          }
+        ]
       },
       {
-        stepLabel:"MUNDO 4 DE 4 • EL VÍNCULO ETERNO",
-        name:"4. LEYENDA",
-        title:"HÉROES DE LA LEYENDA (VALOR & SABIDURÍA)",
-        lore:"«No importa cuántas vidas o eras temporales tengamos que cruzar... siempre encontraré el camino para estar a tu lado.»",
-        bond:100,
-        p1Color:'#2d6a4f',p2Color:'#f72585',type:'hero',
-        bgTheme:'#1b3323',skyTheme:'#07170f'
+        id: 3,
+        name: "4. DIMENSIÓN DEL ALMA // WANDA & VISIÓN",
+        bond: "80% ♥",
+        theme: "wanda_vision",
+        skyDark: "#1a0410",
+        skyMid: "#3d0a20",
+        p1Light: "#f1c40f",
+        p2Light: "#e74c3c",
+        groundColor: "#220815",
+        groundBorder: "#e74c3c",
+        memories: [
+          "Recuerdo 1: «¿Qué es el dolor sino el amor que persevera?...»",
+          "Recuerdo 2: Te veo más allá de toda ilusión o distancia: veo tu alma.",
+          "Recuerdo 3: Gracias por existir y por llenar de luz cada rincón de mi realidad."
+        ],
+        cinematic: [
+          {
+            chap: "ACTO IX // LA BARRERA Y LA GEMA DE LA MENTE",
+            hero: "«El amor que persevera más allá de la realidad»",
+            body: "«Entre las ondas carmesíes de la Magia del Caos y el brillo dorado de la Gema de la Mente, dos seres que desafiaron a la misma existencia se miran a los ojos. Visión desciende suavemente y toma la mano de Wanda...»",
+            camX: 380,
+            camY: -160,
+            camZ: 0.85,
+            dur: 7500
+          },
+          {
+            chap: "ACTO X // LA EXPLICACIÓN DE 'TE VEO'",
+            hero: "«La conexión eterna desde Pandora hasta las estrellas»",
+            body: "«Visión susurra: 'Cuando en Pandora dijeron Te Veo, hablaban de reconocer la verdad más profunda del alma. Hoy yo te veo a ti, te veo de verdad... y siento un amor tan sagrado que no cabe en ningún multiverso. Gracias por existir y por estar conmigo'.»",
+            camX: 240,
+            camY: 280,
+            camZ: 1.45,
+            dur: 8500
+          }
+        ]
+      },
+      {
+        id: 4,
+        name: "5. DESTINO FINAL // IRON MAN",
+        bond: "100% ★",
+        theme: "ironman",
+        skyDark: "#080b18",
+        skyMid: "#192238",
+        p1Light: "#f5b041",
+        p2Light: "#5dade2",
+        groundColor: "#0a1120",
+        groundBorder: "#f5b041",
+        memories: [
+          "Recuerdo 1: «Crucé el tiempo para regresar contigo...»",
+          "Recuerdo 2: Cada latido de mi reactor Arc lleva tu nombre grabado en luz eterna.",
+          "Recuerdo 3: «Te amo 10 millones...»"
+        ],
+        cinematic: [
+          {
+            chap: "ACTO XI // EL VUELO DE TONY HACIA EL LAGO",
+            hero: "«El destello dorado y carmesí sobre el jardín»",
+            body: "Tony Stark atraviesa la noche estrellada con los propulsores repulsores encendidos. Desciende con suavidad en el jardín junto a la cabaña del lago, donde Pepper lo espera con una mirada llena de paz.",
+            camX: 550,
+            camY: -180,
+            camZ: 0.85,
+            dur: 7500
+          },
+          {
+            chap: "ACTO XII // LA PROMESA INQUEBRANTABLE",
+            hero: "«Te amo 10 millones...»",
+            body: "La nanotecnología de su armadura Mark 85 se repliega suavemente. El resplandor del Reactor Arc ilumina sus miradas mientras Tony toma su mano y le susurra: 'Te amo 3 millones... no, en este y en cada multiverso: te amo 10 millones'.",
+            camX: 240,
+            camY: 280,
+            camZ: 1.45,
+            dur: 8500
+          }
+        ]
       }
     ];
 
-    let curWorld=0,playable=false,gTick=0,isWarping=false;
-    const p1={x:gW*0.28,y:ground,vx:0,vy:0,grounded:true,dir:1,holding:false};
-    const p2={x:gW*0.52,y:ground,vx:0,vy:0,grounded:true,dir:-1,holding:false};
-    const input={left:false,right:false,jump:false};
+    let currentWorld = WORLDS_DATA[0];
+    let collectedMemoriesCount = 0;
 
-    window.addEventListener('keydown',e=>{
-      if(!playable)return;
-      if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')input.left=true;
-      if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')input.right=true;
-      if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' '){doJump();input.jump=true}
-      if(e.key==='x'||e.key==='X'||e.key==='e'||e.key==='E')enterPortal();
-      if(e.key==='h'||e.key==='H')doHeart();
-    });
-    window.addEventListener('keyup',e=>{
-      if(!playable)return;
-      if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')input.left=false;
-      if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')input.right=false;
-      if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' ')input.jump=false;
-    });
+    const platforms = [];
+    const crystals = [];
+    const bounceMushrooms = [];
+    let portalGate = { x: 1900, y: 290, r: 52 };
 
-    function doJump(){
-      if(p1.grounded){p1.vy=-13.5;p1.grounded=false}
-      if(p2.grounded){p2.vy=-13.5;p2.grounded=false}
-      audio.jumpSfx();
-    }
-    function doHeart(){
-      audio.heartSfx();
-      triggerVictoryFx();
-    }
+    function buildWorldLevel(w) {
+      platforms.length = 0;
+      crystals.length = 0;
+      bounceMushrooms.length = 0;
 
-    function enterPortal(){
-      if(isWarping)return;
-      isWarping=true;
-      audio.portalSfx();
+      platforms.push({ x: -250, y: 350, w: 2350, h: 280, isGround: true });
+      platforms.push({ x: 220, y: 220, w: 180, h: 24 });
+      platforms.push({ x: 500, y: 110, w: 210, h: 24 });
+      platforms.push({ x: 840, y: 200, w: 220, h: 24 });
+      platforms.push({ x: 1200, y: 120, w: 240, h: 24 });
+      platforms.push({ x: 1540, y: 210, w: 200, h: 24 });
 
-      const warpEl=document.getElementById('warp');
-      warpEl.classList.remove('active');
-      void warpEl.offsetWidth;
-      warpEl.classList.add('active');
+      crystals.push({ x: 310, y: 170, id: 0, collected: false });
+      crystals.push({ x: 605, y: 60, id: 1, collected: false });
+      crystals.push({ x: 1320, y: 70, id: 2, collected: false });
 
-      setTimeout(()=>{
-        curWorld=(curWorld+1)%WORLDS.length;
-        const w=WORLDS[curWorld];
+      bounceMushrooms.push({ x: 420, y: 338, w: 46, h: 18 });
+      bounceMushrooms.push({ x: 1080, y: 338, w: 46, h: 18 });
 
-        p1.x=gW*0.18;p2.x=gW*0.35;
-        p1.vx=3;p2.vx=3;
-
-        document.getElementById('dim-name').innerText=w.name;
-        document.getElementById('heart-pts').innerText=w.bond+'% ♥';
-        document.getElementById('toast-step').innerText=w.stepLabel;
-        document.getElementById('toast-title').innerText=w.title;
-        document.getElementById('toast-lore').innerText=w.lore;
-        document.getElementById('dim-toast').style.display='block';
-
-        if(w.bond===100){
-          audio.fanfare();
-          document.getElementById('modal').style.display='flex';
-        }
-        isWarping=false;
-      },700);
+      portalGate.x = 1860;
+      portalGate.y = 290;
     }
 
-    function initGame(){
-      p1.y=ground;p2.y=ground;
-      requestAnimationFrame(gameLoop);
-    }
-
-    function drawPortal(px,py){
-      gCtx.save();
-      const pulse=1+Math.sin(gTick*0.12)*0.15,swirl=gTick*0.06;
-      const grad=gCtx.createRadialGradient(px,py,10,px,py,55*pulse);
-      grad.addColorStop(0,'#ffffff');grad.addColorStop(0.3,'#00f2fe');grad.addColorStop(0.7,'#e040fb');grad.addColorStop(1,'transparent');
-      gCtx.fillStyle=grad;gCtx.beginPath();gCtx.arc(px,py,55*pulse,0,Math.PI*2);gCtx.fill();
-
-      gCtx.strokeStyle='rgba(255,255,255,0.85)';gCtx.lineWidth=3;
-      gCtx.beginPath();gCtx.ellipse(px,py,18*pulse,42*pulse,swirl,0,Math.PI*2);gCtx.stroke();
-      gCtx.strokeStyle='rgba(13,245,183,0.9)';
-      gCtx.beginPath();gCtx.ellipse(px,py,26*pulse,48*pulse,-swirl*1.2,0,Math.PI*2);gCtx.stroke();
-
-      gCtx.font="8px 'Press Start 2P'";gCtx.fillStyle=Math.sin(gTick*0.1)>0?'#ffe600':'#ffffff';
-      gCtx.textAlign='center';
-      gCtx.fillText("▶ PORTAL ◀",px,py-60);
-      gCtx.fillText("ENTRAR",px,py-48);
-      gCtx.restore();
-    }
-
-    function drawWorldBackdrop(){
-      const w=WORLDS[curWorld];
-      const sky=gCtx.createLinearGradient(0,0,0,gH);
-      sky.addColorStop(0,w.skyTheme);sky.addColorStop(0.6,w.bgTheme);sky.addColorStop(1,'#04120e');
-      gCtx.fillStyle=sky;gCtx.fillRect(0,0,gW,gH);
-
-      if(curWorld===0){
-        // Pandora en 2-Bits: Árbol Sagrado y Polifemo
-        drawPolyphemus(gW*0.8,gH*0.2);
-        drawTree2Bit(gW*0.48,ground);
-      } else if(curWorld===1){
-        drawGothamSkyline();
-      } else if(curWorld===2){
-        drawCosmosNebula();
-      } else if(curWorld===3){
-        drawLegendCastle();
-      }
-
-      // Isla flotante
-      const iw=Math.min(840,gW*0.94);
-      gCtx.fillStyle='#09231c';gCtx.fillRect(gW*0.5-iw/2,ground+10,iw,50);
-      gCtx.fillStyle='#13d6a8';gCtx.fillRect(gW*0.5-iw/2,ground+6,iw,6);
-    }
-
-    function drawPolyphemus(cx,cy){
-      gCtx.fillStyle='#302b63';gCtx.beginPath();gCtx.arc(cx,cy,42,0,Math.PI*2);gCtx.fill();
-      gCtx.strokeStyle='rgba(0,242,254,0.35)';gCtx.lineWidth=4;
-      gCtx.beginPath();gCtx.ellipse(cx,cy,70,15,-0.3,0,Math.PI*2);gCtx.stroke();
-    }
-
-    function drawTree2Bit(cx,baseY){
-      const rad=gCtx.createRadialGradient(cx,baseY-130,20,cx,baseY-130,200);
-      rad.addColorStop(0,'rgba(0,242,254,0.25)');rad.addColorStop(1,'transparent');
-      gCtx.fillStyle=rad;gCtx.beginPath();gCtx.arc(cx,baseY-130,200,0,Math.PI*2);gCtx.fill();
-      gCtx.fillStyle='#071e1c';gCtx.fillRect(cx-26,baseY-160,52,160);
-      for(let i=0;i<26;i++){
-        const rx=cx-130+(i/26)*260,ry=baseY-170,len=85+Math.sin(i*1.8)*30,sway=Math.sin(gTick*0.04+i*0.4)*14;
-        gCtx.strokeStyle=i%2===0?'#fff':'#00f2fe';gCtx.lineWidth=2;
-        gCtx.beginPath();gCtx.moveTo(rx,ry);gCtx.quadraticCurveTo(rx+sway*0.5,ry+len*0.5,rx+sway,ry+len);gCtx.stroke();
-      }
-    }
-
-    function drawGothamSkyline(){
-      gCtx.fillStyle='#ffe600';gCtx.beginPath();gCtx.arc(gW*0.75,gH*0.22,40,0,Math.PI*2);gCtx.fill();
-      gCtx.fillStyle='#090915';
-      for(let i=0;i<9;i++){
-        const bx=gW*0.1+i*(gW*0.09),bw=gW*0.08,bh=120+(i%3)*60;
-        gCtx.fillRect(bx,ground-bh,bw,bh);
-        gCtx.fillStyle='#ffe600';
-        gCtx.fillRect(bx+10,ground-bh+20,6,8);
-        gCtx.fillRect(bx+25,ground-bh+40,6,8);
-        gCtx.fillStyle='#090915';
-      }
-    }
-
-    function drawCosmosNebula(){
-      const rad=gCtx.createRadialGradient(gW*0.5,gH*0.3,30,gW*0.5,gH*0.3,280);
-      rad.addColorStop(0,'rgba(224,64,251,0.3)');rad.addColorStop(0.5,'rgba(0,242,254,0.15)');rad.addColorStop(1,'transparent');
-      gCtx.fillStyle=rad;gCtx.fillRect(0,0,gW,gH);
-      gCtx.fillStyle='#ffffff';
-      for(let i=0;i<18;i++){
-        const sx=(i*97)%gW,sy=(i*53)%(gH*0.6);
-        if(Math.sin(gTick*0.1+i)>0)gCtx.fillRect(sx,sy,3,3);
-      }
-    }
-
-    function drawLegendCastle(){
-      gCtx.fillStyle='rgba(13,245,183,0.18)';
-      gCtx.fillRect(0,gH*0.15,gW,80);
-      gCtx.fillStyle='#0e261d';
-      gCtx.fillRect(gW*0.42,ground-130,35,130);
-      gCtx.fillRect(gW*0.54,ground-130,35,130);
-      gCtx.fillRect(gW*0.46,ground-160,40,160);
-      gCtx.fillStyle='#ffd166';
-      gCtx.fillRect(gW*0.48,ground-175,12,8);
-    }
-
-    function drawChar(p,isP1){
-      const d=WORLDS[curWorld];
-      gCtx.save();gCtx.translate(p.x,p.y);
-      if(p.dir<0)gCtx.scale(-1,1);
-      const sc=2.2,breath=Math.sin(gTick*0.08)*1.5,walk=Math.sin(gTick*0.25)*(Math.abs(p.vx)>0.1?5:0);
-      
-      gCtx.fillStyle=isP1?d.p1Color:d.p2Color;
-      gCtx.fillRect(-7*sc,(-22+breath)*sc,14*sc,12*sc);
-      gCtx.fillRect(-5*sc,(-10+breath)*sc,10*sc,10*sc);
-
-      if(d.type==='navi'){
-        gCtx.fillStyle='#0077b6';gCtx.fillRect(-10*sc,(-24+breath)*sc,3*sc,6*sc);gCtx.fillRect(7*sc,(-24+breath)*sc,3*sc,6*sc);
-        gCtx.fillStyle='#111';gCtx.fillRect(-9*sc,(-16+breath)*sc,3*sc,14*sc);
-        gCtx.fillStyle='#e040fb';gCtx.fillRect(-9*sc,(0+breath)*sc,3*sc,3*sc);
-        if(!isP1){gCtx.fillStyle='#ff2a7a';gCtx.fillRect(4*sc,(-25+breath)*sc,4*sc,4*sc)}
-      } else if(d.type==='bat'){
-        if(isP1){
-          gCtx.fillStyle='#111';gCtx.fillRect(-8*sc,(-28+breath)*sc,3*sc,6*sc);gCtx.fillRect(5*sc,(-28+breath)*sc,3*sc,6*sc);
-          gCtx.fillStyle='#0a0a0f';gCtx.fillRect(-9*sc,(-9+breath)*sc,5*sc,14*sc);
-        } else {
-          gCtx.fillStyle='#111';gCtx.fillRect(-7*sc,(-27+breath)*sc,3*sc,5*sc);gCtx.fillRect(4*sc,(-27+breath)*sc,3*sc,5*sc);
-        }
-      } else if(d.type==='jedi'){
-        gCtx.fillStyle=isP1?'#00f2fe':'#ff2a7a';
-        gCtx.fillRect(7*sc,(-20+breath)*sc,3*sc,18*sc);
-        gCtx.fillStyle='#fff';gCtx.fillRect(7.5*sc,(-18+breath)*sc,2*sc,15*sc);
-      }
-
-      gCtx.fillStyle='#ffd166';
-      gCtx.fillRect(1*sc,(-18+breath)*sc,3*sc,3*sc);gCtx.fillRect(-4*sc,(-18+breath)*sc,3*sc,3*sc);
-
-      gCtx.fillStyle=isP1?d.p1Color:d.p2Color;
-      if(p.holding){
-        gCtx.fillRect(4*sc,(-6+breath)*sc,8*sc,4*sc);
-      } else {
-        gCtx.fillRect(4*sc,(-6+breath)*sc,3*sc,7*sc);
-      }
-
-      gCtx.fillRect(-4*sc,(1+walk)*sc,3*sc,8*sc);
-      gCtx.fillRect(1*sc,(1-walk)*sc,3*sc,8*sc);
-      gCtx.restore();
-    }
-
-    function gameLoop(){
-      gTick++;
-      gCtx.clearRect(0,0,gW,gH);
-      drawWorldBackdrop();
-
-      const portalX=gW*0.86,portalY=ground-35;
-      drawPortal(portalX,portalY);
-
-      if(playable){
-        const spd=4.5,grav=0.72;
-        if(input.left){p1.vx=-spd;p2.vx=-spd*0.9;p1.dir=-1;p2.dir=-1}
-        else if(input.right){p1.vx=spd;p2.vx=spd*0.9;p1.dir=1;p2.dir=1}
-        else {p1.vx*=0.75;p2.vx*=0.75}
-
-        p1.vy+=grav;p2.vy+=grav;
-        p1.x+=p1.vx;p1.y+=p1.vy;p2.x+=p2.vx;p2.y+=p2.vy;
-
-        if(p1.y>=ground){p1.y=ground;p1.vy=0;p1.grounded=true}
-        if(p2.y>=ground){p2.y=ground;p2.vy=0;p2.grounded=true}
-        p1.x=Math.max(35,Math.min(gW-35,p1.x));p2.x=Math.max(35,Math.min(gW-35,p2.x));
-
-        if(p1.x>portalX-30||p2.x>portalX-30){
-          enterPortal();
-        }
-      }
-
-      drawChar(p1,true);drawChar(p2,false);
-
-      const dist=Math.abs(p1.x-p2.x);
-      const close=dist<70;
-      p1.holding=close;p2.holding=close;
-
-      if(close){
-        const midX=(p1.x+p2.x)/2,midY=Math.min(p1.y,p2.y)-60;
-        const pulse=1+Math.sin(gTick*0.15)*0.18,s=20*pulse;
-        gCtx.fillStyle='#ff2a7a';
-        gCtx.fillRect(midX-s,midY-s*0.5,s*0.9,s*0.9);
-        gCtx.fillRect(midX+s*0.1,midY-s*0.5,s*0.9,s*0.9);
-        gCtx.fillRect(midX-s*1.1,midY-s*0.1,s*2.2,s*0.7);
-        gCtx.fillRect(midX-s*0.7,midY+s*0.6,s*1.4,s*0.5);
-
-        gCtx.font="9px 'Press Start 2P'";gCtx.fillStyle='#ff2a7a';gCtx.textAlign='center';
-        gCtx.fillText("♥ VÍNCULO ETERNO ♥",midX,midY-24);
-      }
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    /* 5. EVENTOS Y CONTROL */
-    document.getElementById('btn-start').addEventListener('click',()=>{
-      audio.init();document.getElementById('start-overlay').classList.add('hidden');
-      goStep(0);schedule(0);
-    });
-
-    document.getElementById('sound-btn').addEventListener('click',()=>{
-      const m=audio.toggleMute();
-      document.getElementById('sound-btn').innerText=m?'🔇':'🔊';
-    });
-
-    function accept(){
-      audio.fanfare();
-      document.getElementById('dialog').classList.add('minimized');
-      playable=true;
-      document.getElementById('hud').classList.add('active');
-      document.getElementById('touch').classList.add('active');
-      document.getElementById('letter-btn').style.display='block';
-      document.getElementById('dim-toast').style.display='block';
-      triggerVictoryFx();
-    }
-
-    document.getElementById('btn-yes1').addEventListener('click',accept);
-    document.getElementById('btn-yes2').addEventListener('click',accept);
-    document.getElementById('letter-btn').addEventListener('click',()=>{document.getElementById('modal').style.display='flex'});
-    document.getElementById('btn-close-modal').addEventListener('click',()=>{document.getElementById('modal').style.display='none'});
-    document.getElementById('dim-btn').addEventListener('click',enterPortal);
-
-    const bindTouch=(id,down,up)=>{
-      const el=document.getElementById(id);
-      el.addEventListener('pointerdown',down);
-      el.addEventListener('pointerup',up);
-      el.addEventListener('pointerleave',up);
-    };
-    bindTouch('t-left',()=>input.left=true,()=>input.left=false);
-    bindTouch('t-right',()=>input.right=true,()=>input.right=false);
-    document.getElementById('t-jump').addEventListener('pointerdown',doJump);
-    document.getElementById('t-heart').addEventListener('pointerdown',doHeart);
-    document.getElementById('t-portal').addEventListener('pointerdown',enterPortal);
-
-    /* CONFETI FX */
-    const fxCanvas=document.getElementById('fx'),fCtx=fxCanvas.getContext('2d');
-    let fW=fxCanvas.width=window.innerWidth,fH=fxCanvas.height=window.innerHeight;
-    window.addEventListener('resize',()=>{fW=fxCanvas.width=window.innerWidth;fH=fxCanvas.height=window.innerHeight});
-    let particles=[];
-    function triggerVictoryFx(){
-      for(let i=0;i<120;i++){
+    const particles = [];
+    function spawnSparks(x, y, color, count = 12) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 1 + Math.random() * 4;
         particles.push({
-          x:fW/2,y:fH/2,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*16-3,
-          color:['#0df5b7','#ff2a7a','#ffe600','#00f2fe','#e040fb'][Math.floor(Math.random()*5)],
-          life:1,decay:0.008+Math.random()*0.008
+          x, y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - 1,
+          col: color,
+          alpha: 1,
+          size: 2 + Math.random() * 3.5,
+          life: 30 + Math.random() * 30
         });
       }
-      renderFx();
     }
-    function renderFx(){
-      fCtx.clearRect(0,0,fW,fH);
-      for(let i=particles.length-1;i>=0;i--){
-        const p=particles[i];
-        p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life-=p.decay;
-        if(p.life<=0){particles.splice(i,1);continue}
-        fCtx.fillStyle=p.color;fCtx.globalAlpha=p.life;
-        fCtx.fillRect(p.x,p.y,8,8);
+
+    function spawnHeartBurst(x, y) {
+      for (let i = 0; i < 20; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 1.5 + Math.random() * 4;
+        particles.push({
+          x, y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - 2,
+          col: '#ff2a7a',
+          alpha: 1,
+          size: 4 + Math.random() * 4,
+          life: 50,
+          isHeart: true
+        });
       }
-      if(particles.length>0)requestAnimationFrame(renderFx);
     }
+
+    const P1 = {
+      x: 80, y: 280, vx: 0, vy: 0,
+      w: 24, h: 54,
+      onGround: false,
+      facing: 1
+    };
+
+    const P2 = {
+      x: 140, y: 280, vx: 0, vy: 0,
+      w: 24, h: 54,
+      onGround: false,
+      facing: 1
+    };
+
+    let isHandHolding = false;
+    const keys = {};
+
+    window.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (e.code === 'KeyH') toggleHandHolding();
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.code] = false;
+    });
+
+    function toggleHandHolding() {
+      const dist = Math.hypot(P1.x - P2.x, P1.y - P2.y);
+      if (dist < 120) {
+        isHandHolding = !isHandHolding;
+        sound.playHeartPulse();
+        if (isHandHolding) {
+          spawnHeartBurst((P1.x + P2.x) * 0.5, (P1.y + P2.y) * 0.5 - 20);
+        }
+      }
+    }
+
+    function setupTouch(id, onStart, onEnd) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchstart', e => { e.preventDefault(); onStart(); }, { passive: false });
+      el.addEventListener('touchend', e => { e.preventDefault(); if (onEnd) onEnd(); }, { passive: false });
+      el.addEventListener('mousedown', e => { e.preventDefault(); onStart(); });
+      el.addEventListener('mouseup', e => { e.preventDefault(); if (onEnd) onEnd(); });
+    }
+
+    setupTouch('t-left', () => { keys['ArrowLeft'] = true; }, () => { keys['ArrowLeft'] = false; });
+    setupTouch('t-right', () => { keys['ArrowRight'] = true; }, () => { keys['ArrowRight'] = false; });
+    setupTouch('t-jump', () => {
+      if (P1.onGround) { P1.vy = -12; sound.playJump(); }
+      if (P2.onGround) { P2.vy = -12; }
+    });
+    setupTouch('t-hand', () => { toggleHandHolding(); });
+
+    /* ==========================================================================
+       4. SISTEMA CINEMÁTICO PRECISO (Soluciona el bug de cámara)
+       ========================================================================== */
+    let currentCineSequence = [];
+    let cineIndex = 0;
+    let cineTimer = null;
+
+    function playCinematicSequence(seqList, onComplete) {
+      clearTimeout(cineTimer);
+      currentCineSequence = seqList;
+      cineIndex = 0;
+      gameMode = 'CINEMATIC';
+      document.body.classList.add('cinematic-mode');
+      document.getElementById('cinematic-captions').style.display = 'block';
+      document.getElementById('btn-skip-cine').style.display = 'block';
+      document.getElementById('game-hud').classList.remove('active');
+      document.getElementById('touch-gamepad').classList.remove('active');
+
+      function nextStep(idx) {
+        if (idx >= currentCineSequence.length) {
+          endCinematic(onComplete);
+          return;
+        }
+        cineIndex = idx;
+        const s = currentCineSequence[cineIndex];
+
+        camera.targetX = (s.camX !== undefined) ? s.camX : (P1.x + P2.x) * 0.5;
+        camera.targetY = (s.camY !== undefined) ? s.camY : ((P1.y + P2.y) * 0.5) - 40;
+        camera.targetZoom = (s.camZ !== undefined) ? s.camZ : 1.0;
+
+        const capChapter = document.getElementById('cap-chapter');
+        const capHero = document.getElementById('cap-hero');
+        const capBody = document.getElementById('cap-body');
+
+        capChapter.innerText = s.chap;
+        capHero.innerText = s.hero;
+        capBody.innerText = s.body;
+
+        sound.playChime(cineIndex);
+        sound.playHeartPulse();
+
+        cineTimer = setTimeout(() => {
+          nextStep(cineIndex + 1);
+        }, s.dur);
+      }
+
+      nextStep(0);
+    }
+
+    function endCinematic(callback) {
+      clearTimeout(cineTimer);
+      document.getElementById('cinematic-captions').style.display = 'none';
+      document.getElementById('btn-skip-cine').style.display = 'none';
+
+      if (callback) {
+        callback();
+      } else {
+        document.body.classList.remove('cinematic-mode');
+        gameMode = 'GAMEPLAY';
+        document.getElementById('game-hud').classList.add('active');
+        document.getElementById('touch-gamepad').classList.add('active');
+        camera.targetZoom = 1.0;
+        camera.targetY = 0;
+      }
+    }
+
+    document.getElementById('btn-skip-cine').addEventListener('click', () => {
+      endCinematic(() => {
+        document.body.classList.remove('cinematic-mode');
+        gameMode = 'GAMEPLAY';
+        document.getElementById('game-hud').classList.add('active');
+        document.getElementById('touch-gamepad').classList.add('active');
+        camera.targetZoom = 1.0;
+        camera.targetY = 0;
+      });
+    });
+
+    function playSpecificCinematic(worldId) {
+      document.getElementById('cine-selector-modal').classList.remove('show');
+      document.getElementById('endgame-letter-modal').classList.remove('show');
+      document.getElementById('photo-reveal-overlay').classList.remove('show');
+      climaxState.active = false;
+      climaxState.isGrayscale = false;
+      climaxState.isChibiKids = false;
+      climaxState.showWitnessCircle = false;
+
+      const w = WORLDS_DATA[worldId];
+      currentWorld = w;
+      buildWorldLevel(w);
+      P1.x = 240; P1.y = 310;
+      P2.x = 290; P2.y = 310;
+      playCinematicSequence(w.cinematic, () => {
+        document.body.classList.remove('cinematic-mode');
+        gameMode = 'GAMEPLAY';
+        document.getElementById('game-hud').classList.add('active');
+        document.getElementById('touch-gamepad').classList.add('active');
+        camera.targetZoom = 1.0;
+        camera.targetY = 0;
+      });
+    }
+
+    /* ==========================================================================
+       GRAN CLÍMAX: "ELLA Y YO" (Josue y Ella) + TRANSFORMACIÓN A NIÑOS Y FOTO
+       ========================================================================== */
+    function playClimaxCinematic() {
+      document.getElementById('cine-selector-modal').classList.remove('show');
+      document.getElementById('endgame-letter-modal').classList.remove('show');
+      document.getElementById('photo-reveal-overlay').classList.remove('show');
+
+      climaxState.active = true;
+      climaxState.isGrayscale = true;
+      climaxState.isChibiKids = false;
+      climaxState.colorBurstWave = 0;
+      climaxState.showWitnessCircle = false;
+
+      P1.x = 180; P1.y = 310; P1.vx = 0;
+      P2.x = 60; P2.y = 310; P2.vx = 0;
+      isHandHolding = false;
+
+      const climaxScript = [
+        {
+          chap: "CLÍMAX MULTIVERSAL // EL ENCUENTRO REAL",
+          hero: "«En un mundo sin color... hasta que llegaste tú»",
+          body: "En un universo frío y en escala de grises, yo caminaba sin rumbo. Sentía que nada tenía sentido, hasta que tus pasos comenzaron a acercarse y encendieron mi alma...",
+          camX: 180,
+          camY: 270,
+          camZ: 1.4,
+          dur: 7500
+        },
+        {
+          chap: "CLÍMAX MULTIVERSAL // LA LUZ QUE LO CAMBIÓ TODO",
+          hero: "«No sé qué nos depare el destino, pero quiero que seas tú»",
+          body: "«No importa si tengo que columpiarme entre rascacielos, no importa si tengo que luchar contra galaxias enteras... porque contigo siento una comodidad y una paz que no encontré jamás.»",
+          camX: 240,
+          camY: 270,
+          camZ: 1.5,
+          dur: 8500
+        },
+        {
+          chap: "CLÍMAX MULTIVERSAL // EL VÍNCULO MÁS PURO",
+          hero: "«¿Quieres ser mi acompañante de aventuras?»",
+          body: "Como dos niños chiquitos con toda una vida por descubrir, tomados de la mano sin miedo al mañana... ¿Aceptas ser mi compañera para siempre?",
+          camX: 240,
+          camY: 270,
+          camZ: 1.65,
+          dur: 7500
+        }
+      ];
+
+      playCinematicSequence(climaxScript, () => {
+        document.getElementById('cinematic-captions').style.display = 'none';
+        document.getElementById('btn-skip-cine').style.display = 'none';
+        
+        sound.playPortal();
+        setTimeout(() => {
+          document.getElementById('photo-reveal-overlay').classList.add('show');
+          sound.playCollect();
+        }, 1200);
+      });
+
+      setTimeout(() => {
+        const walkInt = setInterval(() => {
+          if (P2.x < P1.x - 45) {
+            P2.x += 1.2;
+            P2.vx = 1.2;
+          } else {
+            clearInterval(walkInt);
+            P2.vx = 0;
+            isHandHolding = true;
+            climaxState.isGrayscale = false;
+            climaxState.colorBurstWave = 1;
+            climaxState.showWitnessCircle = true;
+            sound.playHeartPulse();
+            spawnHeartBurst((P1.x + P2.x) * 0.5, (P1.y + P2.y) * 0.5 - 30);
+          }
+        }, 30);
+      }, 3500);
+
+      setTimeout(() => {
+        climaxState.isChibiKids = true;
+        sound.playCollect();
+        spawnHeartBurst((P1.x + P2.x) * 0.5, (P1.y + P2.y) * 0.5 - 40);
+      }, 15500);
+    }
+
+    /* ==========================================================================
+       5. DIBUJO DE FONDOS Y ESCENARIOS CINEMATOGRÁFICOS
+       ========================================================================== */
+
+    function drawPolyphemusPlanet(cx, cy, r) {
+      ctx.save();
+      const halo = ctx.createRadialGradient(cx, cy, r * 0.92, cx, cy, r * 1.4);
+      halo.addColorStop(0, 'rgba(0, 242, 254, 0.45)');
+      halo.addColorStop(0.5, 'rgba(0, 132, 255, 0.2)');
+      halo.addColorStop(1, 'transparent');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 1.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      const planetGrad = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+      planetGrad.addColorStop(0, '#0a2e5c');
+      planetGrad.addColorStop(0.3, '#0b407a');
+      planetGrad.addColorStop(0.5, '#1565c0');
+      planetGrad.addColorStop(0.7, '#08254a');
+      planetGrad.addColorStop(1, '#020b18');
+      ctx.fillStyle = planetGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      for (let i = -5; i <= 5; i++) {
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(0, 242, 254, 0.14)' : 'rgba(255, 255, 255, 0.09)';
+        ctx.fillRect(cx - r, cy + i * (r * 0.18) + Math.sin(globalTick * 0.01 + i) * 8, r * 2, r * 0.11);
+      }
+      ctx.fillStyle = 'rgba(0, 242, 254, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(cx + r * 0.35, cy - r * 0.2, r * 0.22, r * 0.12, 0.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      const shadowGrad = ctx.createRadialGradient(cx - r * 0.4, cy - r * 0.4, r * 0.2, cx, cy, r * 1.15);
+      shadowGrad.addColorStop(0, 'transparent');
+      shadowGrad.addColorStop(0.68, 'rgba(1, 4, 12, 0.6)');
+      shadowGrad.addColorStop(1, '#000207');
+      ctx.fillStyle = shadowGrad;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-0.35);
+
+      ctx.strokeStyle = 'rgba(0, 242, 254, 0.38)';
+      ctx.lineWidth = 15;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 2.35, r * 0.46, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(130, 220, 255, 0.55)';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.85, r * 0.36, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 2.1, r * 0.41, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    function drawTreeOfSouls(x, y, scale = 1.0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = '#061a28';
+      ctx.beginPath();
+      ctx.moveTo(-24, 0);
+      ctx.quadraticCurveTo(-18, -90, -48, -160);
+      ctx.lineTo(-32, -165);
+      ctx.quadraticCurveTo(-6, -100, 0, -210);
+      ctx.quadraticCurveTo(6, -100, 32, -165);
+      ctx.lineTo(48, -160);
+      ctx.quadraticCurveTo(18, -90, 24, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(0, 242, 254, 0.7)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(10, -85, 0, -200);
+      ctx.stroke();
+
+      const branches = 36;
+      for (let i = 0; i < branches; i++) {
+        const ang = (i / branches) * Math.PI * 2;
+        const rx = Math.cos(ang) * 120;
+        const ry = -180 + Math.sin(ang) * 50;
+        const sway = Math.sin(globalTick * 0.04 + i) * 20;
+
+        ctx.strokeStyle = i % 2 === 0 ? 'rgba(224, 64, 251, 0.55)' : 'rgba(0, 242, 254, 0.7)';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(0, -195);
+        ctx.quadraticCurveTo(rx * 0.6, ry - 30, rx, ry);
+        ctx.quadraticCurveTo(rx + sway, ry + 75, rx + sway * 0.5, ry + 140);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(rx + sway * 0.5, ry + 140, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawFloatingMountain(x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(4, 18, 30, 0.88)';
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.5, y);
+      ctx.lineTo(x - w * 0.35, y - h);
+      ctx.lineTo(x + w * 0.35, y - h);
+      ctx.lineTo(x + w * 0.5, y);
+      ctx.lineTo(x + w * 0.1, y + h * 0.65);
+      ctx.lineTo(x - w * 0.15, y + h * 0.55);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(0, 242, 254, 0.45)';
+      ctx.lineWidth = 2.8;
+      ctx.beginPath();
+      ctx.moveTo(x, y - h * 0.2);
+      ctx.lineTo(x, y + h * 1.15 + Math.sin(globalTick * 0.08) * 10);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawNewYorkSkyline() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 245, 215, 0.92)';
+      ctx.shadowColor = '#ffeaa7';
+      ctx.shadowBlur = 40;
+      ctx.beginPath();
+      ctx.arc(490, -320, 65, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      const bldgs = [
+        { x: -520, w: 140, h: 430 },
+        { x: -360, w: 180, h: 580 },
+        { x: -160, w: 210, h: 640 },
+        { x: 70, w: 170, h: 490 },
+        { x: 260, w: 230, h: 610 },
+        { x: 510, w: 190, h: 530 },
+        { x: 720, w: 180, h: 460 },
+        { x: 920, w: 250, h: 590 },
+        { x: 1190, w: 210, h: 500 }
+      ];
+
+      bldgs.forEach((b, idx) => {
+        ctx.fillStyle = '#060614';
+        ctx.fillRect(b.x, 350 - b.h, b.w, b.h);
+        ctx.strokeStyle = 'rgba(255, 42, 75, 0.35)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(b.x, 350 - b.h, b.w, b.h);
+
+        if (idx % 2 === 0) {
+          ctx.fillStyle = '#1c1511';
+          ctx.fillRect(b.x + 20, 350 - b.h - 22, 28, 22);
+        }
+
+        ctx.strokeStyle = '#333344';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(b.x + b.w * 0.5, 350 - b.h);
+        ctx.lineTo(b.x + b.w * 0.5, 350 - b.h - 45);
+        ctx.stroke();
+
+        const beaconOp = 0.5 + Math.sin(globalTick * 0.1 + idx) * 0.5;
+        ctx.fillStyle = `rgba(255, 42, 75, ${beaconOp})`;
+        ctx.beginPath();
+        ctx.arc(b.x + b.w * 0.5, 350 - b.h - 45, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = idx % 2 === 0 ? 'rgba(255, 209, 102, 0.7)' : 'rgba(0, 242, 254, 0.6)';
+        for (let wy = 350 - b.h + 25; wy < 320; wy += 36) {
+          for (let wx = b.x + 18; wx < b.x + b.w - 18; wx += 26) {
+            if ((wx + wy) % 3 !== 0) {
+              ctx.fillRect(wx, wy, 9, 14);
+            }
+          }
+        }
+      });
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-160, -200);
+      ctx.quadraticCurveTo(-40, -120, 70, -140);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(260, -230);
+      ctx.quadraticCurveTo(390, -130, 510, -160);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawGuardiansCosmos() {
+      ctx.save();
+      const neb1 = ctx.createRadialGradient(240, -260, 40, 240, -260, 500);
+      neb1.addColorStop(0, 'rgba(224, 64, 251, 0.4)');
+      neb1.addColorStop(0.5, 'rgba(255, 119, 0, 0.2)');
+      neb1.addColorStop(1, 'transparent');
+      ctx.fillStyle = neb1;
+      ctx.fillRect(-700, -750, 1900, 950);
+
+      const neb2 = ctx.createRadialGradient(780, -190, 50, 780, -190, 480);
+      neb2.addColorStop(0, 'rgba(0, 242, 254, 0.32)');
+      neb2.addColorStop(0.6, 'rgba(46, 204, 113, 0.18)');
+      neb2.addColorStop(1, 'transparent');
+      ctx.fillStyle = neb2;
+      ctx.fillRect(200, -650, 1300, 850);
+
+      const milanoX = 420 + Math.sin(globalTick * 0.02) * 65;
+      const milanoY = -340 + Math.cos(globalTick * 0.02) * 22;
+
+      ctx.strokeStyle = 'rgba(255, 119, 0, 0.85)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(milanoX - 45, milanoY + 5);
+      ctx.lineTo(milanoX - 200, milanoY + 10);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(0, 242, 254, 0.85)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(milanoX - 45, milanoY - 5);
+      ctx.lineTo(milanoX - 180, milanoY - 8);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ff7700';
+      ctx.beginPath();
+      ctx.moveTo(milanoX + 40, milanoY);
+      ctx.lineTo(milanoX - 30, milanoY - 30);
+      ctx.lineTo(milanoX - 18, milanoY - 10);
+      ctx.lineTo(milanoX - 40, milanoY);
+      ctx.lineTo(milanoX - 18, milanoY + 10);
+      ctx.lineTo(milanoX - 30, milanoY + 30);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#00f2fe';
+      ctx.beginPath();
+      ctx.ellipse(milanoX + 12, milanoY, 9, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let i = 0; i < 11; i++) {
+        const ax = ((i * 200 + globalTick * 0.45) % 2000) - 500;
+        const ay = -460 + (i * 38) % 200;
+        ctx.fillStyle = 'rgba(130, 110, 170, 0.75)';
+        ctx.beginPath();
+        ctx.arc(ax, ay, 7 + (i % 6), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawWandaVisionScene() {
+      ctx.save();
+      const skyGrad = ctx.createLinearGradient(0, -500, 0, 250);
+      skyGrad.addColorStop(0, '#12020a');
+      skyGrad.addColorStop(0.5, '#2e0717');
+      skyGrad.addColorStop(0.85, '#5c0d29');
+      skyGrad.addColorStop(1, '#82193a');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(-1100, -650, 3200, 850);
+
+      for (let row = 0; row < 5; row++) {
+        for (let col = -3; col < 8; col++) {
+          const hx = col * 120 + (row % 2) * 60;
+          const hy = -380 + row * 100;
+          const op = 0.2 + Math.sin(globalTick * 0.05 + col + row) * 0.25;
+          ctx.strokeStyle = `rgba(255, 42, 122, ${op})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let s = 0; s < 6; s++) {
+            const a = (s / 6) * Math.PI * 2;
+            const px = hx + Math.cos(a) * 35;
+            const py = hy + Math.sin(a) * 35;
+            if (s === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+
+      ctx.fillStyle = '#10060d';
+      ctx.beginPath();
+      ctx.moveTo(680, 350);
+      ctx.lineTo(680, 240);
+      ctx.lineTo(760, 185);
+      ctx.lineTo(840, 240);
+      ctx.lineTo(840, 350);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 209, 102, 0.88)';
+      ctx.fillRect(720, 255, 34, 30);
+      ctx.fillRect(770, 255, 34, 30);
+
+      for (let m = 0; m < 15; m++) {
+        const mx = ((m * 110 + globalTick * 0.5) % 1600) - 200;
+        const my = 330 - ((m * 45 + globalTick * 0.3) % 400);
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.85)';
+        ctx.beginPath();
+        ctx.arc(mx, my, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawIronManScene() {
+      ctx.save();
+      const skyGrad = ctx.createLinearGradient(0, -550, 0, 250);
+      skyGrad.addColorStop(0, '#040714');
+      skyGrad.addColorStop(0.55, '#0d1a33');
+      skyGrad.addColorStop(0.85, '#221e3b');
+      skyGrad.addColorStop(1, '#3b1d28');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(-1100, -650, 3200, 850);
+
+      ctx.fillStyle = '#080d1a';
+      ctx.beginPath();
+      ctx.moveTo(690, 350);
+      ctx.lineTo(690, 245);
+      ctx.lineTo(775, 195);
+      ctx.lineTo(860, 245);
+      ctx.lineTo(860, 350);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(815, 175, 18, 35);
+
+      ctx.fillStyle = 'rgba(255, 209, 102, 0.95)';
+      ctx.fillRect(740, 260, 38, 32);
+      ctx.fillRect(795, 275, 22, 42);
+
+      const ironX = 360 + Math.sin(globalTick * 0.03) * 45;
+      const ironY = -240 + Math.cos(globalTick * 0.03) * 16;
+
+      ctx.strokeStyle = 'rgba(245, 176, 65, 0.95)';
+      ctx.lineWidth = 5.5;
+      ctx.beginPath();
+      ctx.moveTo(ironX - 25, ironY + 6);
+      ctx.lineTo(ironX - 175, ironY + 14);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(192, 57, 43, 0.85)';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(ironX - 25, ironY - 6);
+      ctx.lineTo(ironX - 150, ironY - 8);
+      ctx.stroke();
+
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath();
+      ctx.ellipse(ironX, ironY, 22, 9, -0.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f5b041';
+      ctx.beginPath();
+      ctx.ellipse(ironX + 4, ironY - 2, 9, 4.5, -0.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#5dade2';
+      ctx.shadowColor = '#5dade2';
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(ironX + 11, ironY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      for (let f = 0; f < 12; f++) {
+        const fx = 580 + ((f * 55 + globalTick * 0.4) % 360);
+        const fy = 320 + Math.sin(globalTick * 0.06 + f) * 18;
+        ctx.fillStyle = 'rgba(255, 209, 102, 0.85)';
+        ctx.beginPath();
+        ctx.arc(fx, fy, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    /* ==========================================================================
+       6. DIBUJO DE AVATARES HUMANOIDES COMPLETOS CON ANATOMÍA 3D
+       ========================================================================== */
+    function drawHumanoidAvatar(char, isP1) {
+      ctx.save();
+      ctx.translate(char.x, char.y);
+      if (char.facing < 0) ctx.scale(-1, 1);
+
+      if (climaxState.isChibiKids) {
+        drawChibiKids(isP1);
+        ctx.restore();
+        return;
+      }
+
+      const breath = Math.sin(globalTick * 0.08) * 1.5;
+      const walkCycle = Math.sin(globalTick * 0.22) * (Math.abs(char.vx) > 0.1 ? 1 : 0);
+
+      const leg1Angle = walkCycle * 0.45;
+      const leg2Angle = -walkCycle * 0.45;
+      const armSwing = -walkCycle * 0.45;
+
+      const theme = currentWorld.theme;
+
+      if (climaxState.active) {
+        drawRealCouple(isP1, breath, leg1Angle, leg2Angle, armSwing);
+        ctx.restore();
+        return;
+      }
+
+      if (theme === 'navi') {
+        const skinColor = isP1 ? '#1a6ca8' : '#217bbd';
+        const skinShadow = isP1 ? '#104975' : '#145685';
+        const lightGlow = isP1 ? '#00f2fe' : '#e040fb';
+
+        ctx.save();
+        ctx.translate(3, -26);
+        ctx.rotate(leg2Angle);
+        ctx.fillStyle = skinShadow;
+        ctx.beginPath(); ctx.roundRect(-3, 0, 6, 26, 3); ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = skinColor;
+        ctx.beginPath();
+        ctx.moveTo(-7, -54 + breath); ctx.lineTo(7, -54 + breath);
+        ctx.lineTo(5, -28 + breath); ctx.lineTo(-5, -28 + breath); ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#4a2f1b';
+        ctx.beginPath(); ctx.roundRect(-6, -30 + breath, 12, 10, 2); ctx.fill();
+
+        ctx.save();
+        ctx.translate(-3, -26);
+        ctx.rotate(leg1Angle);
+        ctx.fillStyle = skinColor;
+        ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 3); ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = skinColor;
+        ctx.fillRect(-2.5, -59 + breath, 5, 6);
+        ctx.beginPath(); ctx.ellipse(0, -66 + breath, 7.5, 9.5, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(-5, -73 + breath); ctx.lineTo(-12, -76 + breath); ctx.lineTo(-4, -69 + breath); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(5, -73 + breath); ctx.lineTo(12, -76 + breath); ctx.lineTo(4, -69 + breath); ctx.fill();
+
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.arc(3.5, -67 + breath, 1.8, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#08101a';
+        ctx.beginPath(); ctx.arc(0, -68 + breath, 8, Math.PI, 0); ctx.fill();
+        ctx.strokeStyle = '#08101a'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(-4, -68 + breath);
+        ctx.quadraticCurveTo(-14, -46 + breath, -10 + Math.sin(globalTick * 0.1) * 5, -20); ctx.stroke();
+
+        ctx.save();
+        ctx.translate(0, -52 + breath);
+        ctx.strokeStyle = skinColor; ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+        ctx.restore();
+      }
+      else if (theme === 'spidey_gwen') {
+        if (isP1) {
+          ctx.save();
+          ctx.translate(3, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#0a224a'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 16, 2); ctx.fill();
+          ctx.fillStyle = '#d61b36'; ctx.beginPath(); ctx.roundRect(-3.5, 14, 7, 12, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#0d2d63';
+          ctx.beginPath(); ctx.moveTo(-8, -54 + breath); ctx.lineTo(8, -54 + breath);
+          ctx.lineTo(6, -28 + breath); ctx.lineTo(-6, -28 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.fillStyle = '#ff2a4b';
+          ctx.beginPath(); ctx.moveTo(-4, -54 + breath); ctx.lineTo(4, -54 + breath);
+          ctx.lineTo(3, -30 + breath); ctx.lineTo(-3, -30 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-3, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#0d3273'; ctx.beginPath(); ctx.roundRect(-4, 0, 8, 16, 2); ctx.fill();
+          ctx.fillStyle = '#ff2a4b'; ctx.beginPath(); ctx.roundRect(-4, 14, 8, 12, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#ff2a4b';
+          ctx.beginPath(); ctx.ellipse(0, -65 + breath, 7.8, 9.8, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 8;
+          ctx.beginPath(); ctx.moveTo(1.5, -68 + breath); ctx.lineTo(8, -65 + breath); ctx.lineTo(2.5, -62 + breath); ctx.closePath(); ctx.fill();
+          ctx.shadowBlur = 0;
+
+          ctx.save();
+          ctx.translate(0, -52 + breath);
+          ctx.strokeStyle = '#ff2a4b'; ctx.lineWidth = 3.6;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(2.5, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#11141c'; ctx.beginPath(); ctx.roundRect(-3, 0, 6, 18, 2); ctx.fill();
+          ctx.fillStyle = '#0df5b7'; ctx.beginPath(); ctx.roundRect(-3, 16, 6, 10, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#f5f6fa';
+          ctx.beginPath(); ctx.moveTo(-6.5, -53 + breath); ctx.lineTo(6.5, -53 + breath);
+          ctx.lineTo(5, -28 + breath); ctx.lineTo(-5, -28 + breath); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#11141c';
+          ctx.beginPath(); ctx.moveTo(-6.5, -40 + breath); ctx.lineTo(6.5, -40 + breath);
+          ctx.lineTo(5, -28 + breath); ctx.lineTo(-5, -28 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-2.5, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#181b26'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 18, 2); ctx.fill();
+          ctx.fillStyle = '#0df5b7'; ctx.beginPath(); ctx.roundRect(-3.5, 16, 7, 10, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#f5f6fa';
+          ctx.beginPath(); ctx.ellipse(0, -65 + breath, 8.5, 11, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ff2a7a';
+          ctx.beginPath(); ctx.ellipse(2, -65 + breath, 5.5, 7.5, 0, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ff2a7a'; ctx.shadowBlur = 6;
+          ctx.beginPath(); ctx.moveTo(2, -67 + breath); ctx.lineTo(7, -64 + breath); ctx.lineTo(3, -62 + breath); ctx.closePath(); ctx.fill();
+          ctx.shadowBlur = 0;
+
+          ctx.save();
+          ctx.translate(0, -51 + breath);
+          ctx.strokeStyle = '#f5f6fa'; ctx.lineWidth = 3.2;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        }
+      }
+      else if (theme === 'guardians') {
+        if (isP1) {
+          ctx.save();
+          ctx.translate(3, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#2c1e18'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2); ctx.fill();
+          ctx.fillStyle = '#ff7700'; ctx.beginPath(); ctx.arc(-1, 24, 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#7b1e19';
+          ctx.beginPath(); ctx.moveTo(-8, -54 + breath); ctx.lineTo(8, -54 + breath);
+          ctx.lineTo(7, -22 + breath); ctx.lineTo(-7, -22 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-3, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#3d2b22'; ctx.beginPath(); ctx.roundRect(-4, 0, 8, 26, 2); ctx.fill();
+          ctx.fillStyle = '#ff7700'; ctx.beginPath(); ctx.arc(-1, 24, 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#f5cba7';
+          ctx.beginPath(); ctx.ellipse(0, -64 + breath, 7, 9, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(0, -60 + breath, 8, Math.PI * 0.2, Math.PI * 0.8); ctx.stroke();
+          ctx.fillStyle = '#4a2311'; ctx.beginPath(); ctx.arc(0, -67 + breath, 8, Math.PI * 0.8, 0); ctx.fill();
+
+          ctx.save();
+          ctx.translate(0, -52 + breath);
+          ctx.strokeStyle = '#7b1e19'; ctx.lineWidth = 3.6;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(2.5, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#1c2833'; ctx.beginPath(); ctx.roundRect(-3, 0, 6, 26, 2.5); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#27ae60';
+          ctx.beginPath(); ctx.moveTo(-6.5, -53 + breath); ctx.lineTo(6.5, -53 + breath);
+          ctx.lineTo(5, -28 + breath); ctx.lineTo(-5, -28 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-2.5, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#212f3d'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2.5); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#2ecc71';
+          ctx.beginPath(); ctx.ellipse(0, -64 + breath, 7, 9, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#17202a'; ctx.beginPath(); ctx.arc(0, -66 + breath, 8.5, Math.PI * 0.8, 0); ctx.fill();
+          ctx.fillStyle = '#8e44ad'; ctx.beginPath(); ctx.moveTo(-6, -60 + breath);
+          ctx.quadraticCurveTo(-14, -40 + breath, -10 + Math.sin(globalTick * 0.1) * 5, -16); ctx.lineTo(-4, -40 + breath); ctx.fill();
+
+          ctx.save();
+          ctx.translate(0, -51 + breath);
+          ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 3.2;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        }
+      }
+      else if (theme === 'wanda_vision') {
+        if (isP1) {
+          ctx.save();
+          ctx.translate(3, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#641e16'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#f1c40f';
+          ctx.beginPath();
+          ctx.moveTo(-7, -54 + breath); ctx.lineTo(-18 + Math.sin(globalTick * 0.1) * 6, -10);
+          ctx.lineTo(-4, -26); ctx.closePath(); ctx.fill();
+
+          ctx.fillStyle = '#117864';
+          ctx.beginPath(); ctx.moveTo(-8, -54 + breath); ctx.lineTo(8, -54 + breath);
+          ctx.lineTo(6, -28 + breath); ctx.lineTo(-6, -28 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-3, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#78281f'; ctx.beginPath(); ctx.roundRect(-4, 0, 8, 26, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#922b21';
+          ctx.beginPath(); ctx.ellipse(0, -65 + breath, 7.5, 9.5, 0, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = '#f1c40f'; ctx.shadowColor = '#f1c40f'; ctx.shadowBlur = 15;
+          ctx.beginPath(); ctx.arc(2, -68 + breath, 2.8, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+
+          ctx.save();
+          ctx.translate(0, -52 + breath);
+          ctx.strokeStyle = '#922b21'; ctx.lineWidth = 3.6;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(2.5, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#17202a'; ctx.beginPath(); ctx.roundRect(-3, 0, 6, 26, 2.5); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#b03a2e';
+          ctx.beginPath(); ctx.moveTo(-6.5, -53 + breath); ctx.lineTo(6.5, -53 + breath);
+          ctx.lineTo(5, -28 + breath); ctx.lineTo(-5, -28 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-2.5, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#1c2833'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2.5); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#fbeee6';
+          ctx.beginPath(); ctx.ellipse(0, -64 + breath, 6.8, 8.8, 0, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = '#6e2c00';
+          ctx.beginPath(); ctx.arc(0, -66 + breath, 8.5, Math.PI * 0.9, 0);
+          ctx.quadraticCurveTo(-14, -42 + breath, -10 + Math.sin(globalTick * 0.1) * 5, -16);
+          ctx.lineTo(-4, -62 + breath); ctx.fill();
+
+          ctx.fillStyle = '#922b21';
+          ctx.beginPath();
+          ctx.moveTo(-5, -70 + breath); ctx.lineTo(-2, -73 + breath); ctx.lineTo(0, -69 + breath);
+          ctx.lineTo(2, -73 + breath); ctx.lineTo(5, -70 + breath); ctx.fill();
+
+          ctx.save();
+          ctx.translate(0, -51 + breath);
+          ctx.strokeStyle = '#b03a2e'; ctx.lineWidth = 3.2;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.fillStyle = '#e74c3c'; ctx.shadowColor = '#e74c3c'; ctx.shadowBlur = 12;
+          ctx.beginPath(); ctx.arc(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18, 3.5, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.restore();
+        }
+      }
+      else if (theme === 'ironman') {
+        if (isP1) {
+          ctx.save();
+          ctx.translate(3, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#78281f'; ctx.beginPath(); ctx.roundRect(-4, 0, 8, 16, 2); ctx.fill();
+          ctx.fillStyle = '#b7950b'; ctx.beginPath(); ctx.roundRect(-4, 14, 8, 12, 2); ctx.fill();
+          ctx.fillStyle = '#5dade2'; ctx.beginPath(); ctx.arc(0, 26, 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#c0392b';
+          ctx.beginPath(); ctx.moveTo(-9, -55 + breath); ctx.lineTo(9, -55 + breath);
+          ctx.lineTo(7, -27 + breath); ctx.lineTo(-7, -27 + breath); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#f5b041';
+          ctx.beginPath(); ctx.moveTo(-5, -53 + breath); ctx.lineTo(5, -53 + breath);
+          ctx.lineTo(4, -36 + breath); ctx.lineTo(-4, -36 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.fillStyle = '#5dade2'; ctx.shadowColor = '#5dade2'; ctx.shadowBlur = 14;
+          ctx.beginPath(); ctx.moveTo(0, -48 + breath); ctx.lineTo(4.5, -40 + breath); ctx.lineTo(-4.5, -40 + breath); ctx.closePath(); ctx.fill();
+          ctx.shadowBlur = 0;
+
+          ctx.save();
+          ctx.translate(-3, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#922b21'; ctx.beginPath(); ctx.roundRect(-4.5, 0, 9, 16, 2); ctx.fill();
+          ctx.fillStyle = '#d4ac0d'; ctx.beginPath(); ctx.roundRect(-4.5, 14, 9, 12, 2); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#f5cba7'; ctx.beginPath(); ctx.ellipse(0, -65 + breath, 7.5, 9.5, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#1c2833'; ctx.beginPath(); ctx.arc(0, -68 + breath, 8, Math.PI * 0.8, 0); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(-2, -58 + breath); ctx.lineTo(2, -58 + breath); ctx.lineTo(0, -55 + breath); ctx.fill();
+
+          ctx.save();
+          ctx.translate(0, -53 + breath);
+          ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(2.5, -26); ctx.rotate(leg2Angle);
+          ctx.fillStyle = '#1f3a52'; ctx.beginPath(); ctx.roundRect(-3, 0, 6, 26, 2.5); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#284d6e';
+          ctx.beginPath(); ctx.moveTo(-6.5, -53 + breath); ctx.lineTo(6.5, -53 + breath);
+          ctx.lineTo(5, -28 + breath); ctx.lineTo(-5, -28 + breath); ctx.closePath(); ctx.fill();
+
+          ctx.save();
+          ctx.translate(-2.5, -26); ctx.rotate(leg1Angle);
+          ctx.fillStyle = '#34628c'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2.5); ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = '#fbeee6'; ctx.beginPath(); ctx.ellipse(0, -64 + breath, 6.8, 8.8, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.arc(0, -66 + breath, 8.5, Math.PI * 0.9, 0);
+          ctx.quadraticCurveTo(-14, -42 + breath, -10 + Math.sin(globalTick * 0.1) * 5, -16); ctx.lineTo(-4, -62 + breath); ctx.fill();
+
+          ctx.save();
+          ctx.translate(0, -51 + breath);
+          ctx.strokeStyle = '#284d6e'; ctx.lineWidth = 3.2;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawRealCouple(isP1, breath, leg1Angle, leg2Angle, armSwing) {
+      if (isP1) {
+        const skin = climaxState.isGrayscale ? '#7a7a7a' : '#8d5524';
+        const jacket = climaxState.isGrayscale ? '#404040' : '#1b2a47';
+        const shirt = climaxState.isGrayscale ? '#555555' : '#ffffff';
+        const pants = climaxState.isGrayscale ? '#333333' : '#141419';
+
+        ctx.save();
+        ctx.translate(3, -26); ctx.rotate(leg2Angle);
+        ctx.fillStyle = pants; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2); ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = jacket;
+        ctx.beginPath(); ctx.moveTo(-8, -54 + breath); ctx.lineTo(8, -54 + breath);
+        ctx.lineTo(6, -28 + breath); ctx.lineTo(-6, -28 + breath); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = shirt;
+        ctx.fillRect(-2, -50 + breath, 4, 16);
+
+        ctx.save();
+        ctx.translate(-3, -26); ctx.rotate(leg1Angle);
+        ctx.fillStyle = pants; ctx.beginPath(); ctx.roundRect(-4, 0, 8, 26, 2); ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = skin;
+        ctx.beginPath(); ctx.ellipse(0, -64 + breath, 7.5, 9.5, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = climaxState.isGrayscale ? '#222222' : '#1a110b';
+        ctx.beginPath(); ctx.arc(0, -67 + breath, 8.2, Math.PI * 0.8, 0); ctx.fill();
+
+        ctx.fillStyle = climaxState.isGrayscale ? '#333333' : '#2b170a';
+        ctx.beginPath(); ctx.arc(3.5, -65 + breath, 1.7, 0, Math.PI * 2); ctx.fill();
+
+        ctx.save();
+        ctx.translate(0, -52 + breath);
+        ctx.strokeStyle = jacket; ctx.lineWidth = 3.6;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+        ctx.restore();
+      } else {
+        const skin = '#fde5d2';
+        const dress = '#ff2a7a';
+        const hair = '#5c3a21';
+
+        ctx.save();
+        ctx.translate(2.5, -26); ctx.rotate(leg2Angle);
+        ctx.fillStyle = '#222230'; ctx.beginPath(); ctx.roundRect(-3, 0, 6, 26, 2.5); ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = dress;
+        ctx.beginPath(); ctx.moveTo(-6.5, -53 + breath); ctx.lineTo(6.5, -53 + breath);
+        ctx.lineTo(8, -24 + breath); ctx.lineTo(-8, -24 + breath); ctx.closePath(); ctx.fill();
+
+        ctx.save();
+        ctx.translate(-2.5, -26); ctx.rotate(leg1Angle);
+        ctx.fillStyle = '#222230'; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 26, 2.5); ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = skin;
+        ctx.beginPath(); ctx.ellipse(0, -64 + breath, 6.8, 8.8, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = hair;
+        ctx.beginPath(); ctx.arc(0, -66 + breath, 8.5, Math.PI * 0.9, 0);
+        ctx.quadraticCurveTo(-14, -42 + breath, -10 + Math.sin(globalTick * 0.1) * 5, -16);
+        ctx.lineTo(-4, -62 + breath); ctx.fill();
+
+        ctx.fillStyle = '#3a2010';
+        ctx.beginPath(); ctx.arc(3.2, -65 + breath, 1.7, 0, Math.PI * 2); ctx.fill();
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = 'rgba(255, 209, 102, 0.25)';
+        ctx.beginPath(); ctx.arc(0, -42 + breath, 38, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(0, -51 + breath);
+        ctx.strokeStyle = skin; ctx.lineWidth = 3.2;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(isHandHolding ? 24 : 4, isHandHolding ? 0 : 18); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawChibiKids(isP1) {
+      const breath = Math.sin(globalTick * 0.1) * 1.2;
+      ctx.scale(0.72, 0.72);
+
+      if (isP1) {
+        ctx.fillStyle = '#8d5524';
+        ctx.beginPath(); ctx.ellipse(0, -42 + breath, 13, 14, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1a110b'; ctx.beginPath(); ctx.arc(0, -46 + breath, 14, Math.PI * 0.8, 0); ctx.fill();
+        ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(4, -41 + breath, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(5, -42 + breath, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.4)'; ctx.beginPath(); ctx.arc(6, -36 + breath, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1b2a47'; ctx.beginPath(); ctx.roundRect(-8, -28 + breath, 16, 18, 5); ctx.fill();
+        ctx.fillStyle = '#141419'; ctx.fillRect(-7, -10 + breath, 6, 12); ctx.fillRect(1, -10 + breath, 6, 12);
+        ctx.strokeStyle = '#8d5524'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(4, -20 + breath); ctx.lineTo(22, -18 + breath); ctx.stroke();
+      } else {
+        ctx.fillStyle = '#fde5d2';
+        ctx.beginPath(); ctx.ellipse(0, -42 + breath, 12.5, 13.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5c3a21'; ctx.beginPath(); ctx.arc(0, -46 + breath, 14, Math.PI * 0.9, 0); ctx.fill();
+        ctx.beginPath(); ctx.arc(-13, -40 + breath, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(3.5, -41 + breath, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(4.5, -42 + breath, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 80, 120, 0.45)'; ctx.beginPath(); ctx.arc(5.5, -36 + breath, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff2a7a'; ctx.beginPath(); ctx.moveTo(-7, -28 + breath); ctx.lineTo(7, -28 + breath); ctx.lineTo(10, -10 + breath); ctx.lineTo(-10, -10 + breath); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#222'; ctx.fillRect(-5, -10 + breath, 4, 12); ctx.fillRect(1, -10 + breath, 4, 12);
+        ctx.strokeStyle = '#fde5d2'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(0, -20 + breath); ctx.lineTo(22, -18 + breath); ctx.stroke();
+      }
+    }
+
+    /* ==========================================================================
+       7. BUCLE PRINCIPAL DE ANIMACIÓN
+       ========================================================================== */
+    function gameLoop() {
+      globalTick++;
+      ctx.clearRect(0, 0, W, H);
+
+      camera.x += (camera.targetX - camera.x) * 0.08;
+      camera.y += (camera.targetY - camera.y) * 0.08;
+      camera.zoom += (camera.targetZoom - camera.zoom) * 0.04;
+
+      ctx.save();
+      ctx.translate(W * 0.5, H * 0.5);
+      ctx.scale(camera.zoom, camera.zoom);
+      ctx.translate(-camera.x, -camera.y);
+
+      const skyGrad = ctx.createRadialGradient(0, -200, 100, 0, -200, 1400);
+      skyGrad.addColorStop(0, currentWorld.skyMid);
+      skyGrad.addColorStop(0.65, currentWorld.skyDark);
+      skyGrad.addColorStop(1, '#000206');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(-2200, -1400, 4400, 2800);
+
+      for (let i = 0; i < 60; i++) {
+        const sx = ((i * 137) % 2400) - 1200;
+        const sy = ((i * 269) % 1400) - 1000;
+        const op = 0.3 + Math.sin(globalTick * 0.05 + i) * 0.3;
+        ctx.fillStyle = `rgba(255, 255, 255, ${op})`;
+        ctx.beginPath(); ctx.arc(sx, sy, (i % 3) + 1, 0, Math.PI * 2); ctx.fill();
+      }
+
+      if (currentWorld.theme === 'navi') {
+        drawPolyphemusPlanet(360, -430, 170);
+        drawFloatingMountain(-520, -120, 240, 130);
+        drawFloatingMountain(620, -100, 280, 150);
+        drawTreeOfSouls(480, 350, 1.05);
+
+        for (let i = 0; i < 18; i++) {
+          const ex = ((i * 190 + globalTick * 0.6) % 1800) - 400;
+          const ey = 330 - ((i * 50 + globalTick * 0.4) % 450);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.beginPath(); ctx.arc(ex, ey, 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+      } else if (currentWorld.theme === 'spidey_gwen') {
+        drawNewYorkSkyline();
+      } else if (currentWorld.theme === 'guardians') {
+        drawGuardiansCosmos();
+      } else if (currentWorld.theme === 'wanda_vision') {
+        drawWandaVisionScene();
+      } else if (currentWorld.theme === 'ironman') {
+        drawIronManScene();
+      }
+
+      if (climaxState.showWitnessCircle) {
+        drawWitnessesCircle();
+      }
+
+      platforms.forEach(p => {
+        ctx.fillStyle = currentWorld.groundColor;
+        ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 12); ctx.fill();
+        ctx.strokeStyle = currentWorld.groundBorder; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, 6, 3); ctx.stroke();
+      });
+
+      bounceMushrooms.forEach(m => {
+        ctx.fillStyle = currentWorld.theme === 'ironman' ? '#5dade2' : '#ff2a7a';
+        ctx.beginPath(); ctx.ellipse(m.x + m.w * 0.5, m.y + m.h * 0.5, m.w * 0.5, m.h * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+      });
+
+      crystals.forEach(c => {
+        if (c.collected) return;
+        const cy = c.y + Math.sin(globalTick * 0.08 + c.id) * 8;
+        ctx.save();
+        ctx.translate(c.x, cy); ctx.rotate(globalTick * 0.04);
+        ctx.fillStyle = currentWorld.p2Light; ctx.shadowColor = currentWorld.p2Light; ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(10, 0); ctx.lineTo(0, 14); ctx.lineTo(-10, 0); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      });
+
+      ctx.save();
+      const pPulse = 48 + Math.sin(globalTick * 0.1) * 6;
+      ctx.translate(portalGate.x, portalGate.y); ctx.rotate(globalTick * 0.05);
+      ctx.strokeStyle = currentWorld.p1Light; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, pPulse, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = currentWorld.p2Light; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.ellipse(0, 0, pPulse * 0.7, pPulse * 1.2, 0.4, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+
+      if (isHandHolding) {
+        ctx.save();
+        ctx.strokeStyle = '#ff2a7a'; ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(P1.x, P1.y - 15);
+        ctx.quadraticCurveTo((P1.x + P2.x) * 0.5, (P1.y + P2.y) * 0.5 - 28 + Math.sin(globalTick * 0.1) * 6, P2.x, P2.y - 15);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff2a7a'; ctx.font = '14px Outfit';
+        ctx.fillText('♥', (P1.x + P2.x) * 0.5 - 5, (P1.y + P2.y) * 0.5 - 25);
+        ctx.restore();
+      }
+
+      drawHumanoidAvatar(P1, true);
+      drawHumanoidAvatar(P2, false);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx; pt.y += pt.vy; pt.alpha -= 0.02; pt.life--;
+        if (pt.life <= 0 || pt.alpha <= 0) { particles.splice(i, 1); continue; }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        if (pt.isHeart) {
+          ctx.fillStyle = pt.col; ctx.font = `${pt.size * 2.5}px Outfit`; ctx.fillText('♥', pt.x, pt.y);
+        } else {
+          ctx.fillStyle = pt.col; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      ctx.restore();
+
+      if (gameMode === 'GAMEPLAY') {
+        updateGameplayPhysics();
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function drawWitnessesCircle() {
+      ctx.save();
+      const heroPairs = [
+        { x: -60, y: 310, col1: '#00f2fe', col2: '#e040fb', label: 'Jake & Neytiri' },
+        { x: 30, y: 220, col1: '#ff2a4b', col2: '#0df5b7', label: 'Peter & Gwen' },
+        { x: 390, y: 220, col1: '#ff7700', col2: '#2ecc71', label: 'Star-Lord & Gamora' },
+        { x: 480, y: 310, col1: '#f1c40f', col2: '#e74c3c', label: 'Wanda & Visión' },
+        { x: 210, y: 110, col1: '#f5b041', col2: '#5dade2', label: 'Tony & Pepper' }
+      ];
+
+      heroPairs.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.globalAlpha = 0.85;
+
+        ctx.fillStyle = p.col1;
+        ctx.beginPath(); ctx.arc(-7, -40, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-11, -32, 8, 18);
+
+        ctx.fillStyle = p.col2;
+        ctx.beginPath(); ctx.arc(7, -40, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(3, -32, 8, 18);
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-15, -48, 30, 36);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px Cinzel';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.label, 0, -52);
+        ctx.restore();
+      });
+      ctx.restore();
+    }
+
+    /* ==========================================================================
+       8. FÍSICAS Y CONTROLES
+       ========================================================================== */
+    function updateGameplayPhysics() {
+      if (keys['ArrowLeft'] || keys['KeyA']) {
+        P1.vx = -4.5; P1.facing = -1;
+      } else if (keys['ArrowRight'] || keys['KeyD']) {
+        P1.vx = 4.5; P1.facing = 1;
+      } else {
+        P1.vx *= 0.75;
+      }
+
+      if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && P1.onGround) {
+        P1.vy = -12; sound.playJump();
+      }
+
+      P1.vy += 0.55; P1.x += P1.vx; P1.y += P1.vy;
+      P1.onGround = false;
+
+      platforms.forEach(p => {
+        if (P1.x + P1.w * 0.5 > p.x && P1.x - P1.w * 0.5 < p.x + p.w) {
+          if (P1.y >= p.y && P1.y - P1.vy <= p.y + 12) {
+            P1.y = p.y; P1.vy = 0; P1.onGround = true;
+          }
+        }
+      });
+
+      bounceMushrooms.forEach(m => {
+        if (Math.hypot(P1.x - (m.x + m.w * 0.5), P1.y - m.y) < 28) {
+          P1.vy = -17; sound.playJump(); spawnSparks(P1.x, P1.y, '#ff2a7a', 15);
+        }
+      });
+
+      if (isHandHolding) {
+        const targetX = P1.x + (P1.facing > 0 ? 32 : -32);
+        P2.x += (targetX - P2.x) * 0.15;
+        P2.facing = P1.facing;
+        if (P1.vy < -2 && P2.onGround) P2.vy = P1.vy;
+      } else {
+        const targetX = P1.x + (P1.facing > 0 ? -45 : 45);
+        const dx = targetX - P2.x;
+        if (Math.abs(dx) > 12) {
+          P2.vx = Math.sign(dx) * 3.8; P2.facing = Math.sign(dx);
+        } else {
+          P2.vx *= 0.7;
+        }
+      }
+
+      P2.vy += 0.55; P2.x += P2.vx; P2.y += P2.vy;
+      P2.onGround = false;
+
+      platforms.forEach(p => {
+        if (P2.x + P2.w * 0.5 > p.x && P2.x - P2.w * 0.5 < p.x + p.w) {
+          if (P2.y >= p.y && P2.y - P2.vy <= p.y + 12) {
+            P2.y = p.y; P2.vy = 0; P2.onGround = true;
+          }
+        }
+      });
+
+      crystals.forEach(c => {
+        if (!c.collected && Math.hypot(P1.x - c.x, P1.y - c.y) < 45) {
+          c.collected = true; collectedMemoriesCount++; sound.playCollect();
+          spawnSparks(c.x, c.y, currentWorld.p2Light, 25);
+          showMemoryToast(currentWorld.memories[c.id]);
+          document.getElementById('hud-crystals-val').innerText = `${collectedMemoriesCount} / 3`;
+        }
+      });
+
+      if (Math.hypot(P1.x - portalGate.x, P1.y - portalGate.y) < 55) {
+        advanceToNextWorld();
+      }
+
+      camera.targetX = (P1.x + P2.x) * 0.5;
+      camera.targetY = ((P1.y + P2.y) * 0.5) - 60;
+    }
+
+    let toastTimer = null;
+    function showMemoryToast(text) {
+      clearTimeout(toastTimer);
+      const toast = document.getElementById('memory-toast');
+      document.getElementById('toast-crystal-desc').innerText = `"${text}"`;
+      toast.classList.add('show');
+      toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 5200);
+    }
+
+    /* ==========================================================================
+       9. TRANSICIÓN DE UNIVERSOS Y FINAL
+       ========================================================================== */
+    function advanceToNextWorld() {
+      sound.playPortal();
+      const flash = document.getElementById('warp-flash');
+      flash.classList.remove('active');
+      void flash.offsetWidth;
+      flash.classList.add('active');
+
+      setTimeout(() => {
+        const nextId = (currentWorld.id + 1) % WORLDS_DATA.length;
+        currentWorld = WORLDS_DATA[nextId];
+        collectedMemoriesCount = 0;
+        buildWorldLevel(currentWorld);
+
+        P1.x = 80; P1.y = 280; P1.vx = 2;
+        P2.x = 140; P2.y = 280; P2.vx = 2;
+
+        document.getElementById('hud-world-name').innerText = currentWorld.name;
+        document.getElementById('hud-bond-val').innerText = currentWorld.bond;
+        document.getElementById('hud-crystals-val').innerText = "0 / 3";
+
+        playCinematicSequence(currentWorld.cinematic, () => {
+          document.body.classList.remove('cinematic-mode');
+          gameMode = 'GAMEPLAY';
+          document.getElementById('game-hud').classList.add('active');
+          document.getElementById('touch-gamepad').classList.add('active');
+          camera.targetZoom = 1.0;
+          camera.targetY = 0;
+
+          if (currentWorld.id === 4) {
+            setTimeout(() => {
+              playClimaxCinematic();
+            }, 6000);
+          }
+        });
+      }, 600);
+    }
+
+    /* ==========================================================================
+       10. EVENT LISTENERS, FOTO Y MODALES
+       ========================================================================== */
+    document.getElementById('btn-start').addEventListener('click', () => {
+      sound.init();
+      document.getElementById('screen-landing').classList.add('hidden');
+      buildWorldLevel(currentWorld);
+      playCinematicSequence(currentWorld.cinematic, () => {
+        document.body.classList.remove('cinematic-mode');
+        gameMode = 'GAMEPLAY';
+        document.getElementById('game-hud').classList.add('active');
+        document.getElementById('touch-gamepad').classList.add('active');
+        sound.startGameplayTheme();
+      });
+    });
+
+    const photoFileInput = document.getElementById('photo-file-input');
+    if (photoFileInput) {
+      photoFileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = evt => {
+            const img = document.getElementById('special-couple-photo');
+            img.src = evt.target.result;
+            img.style.display = 'block';
+            document.getElementById('photo-upload-hint').style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    function acceptFinalProposal() {
+      sound.playCollect();
+      spawnHeartBurst(W * 0.5, H * 0.5);
+      alert("♥ ¡VÍNCULO ETERNO ACEPTADO! Gracias por ser mi mayor aventura en este y en todos los universos. ♥");
+    }
+
+    document.getElementById('btn-final-yes').addEventListener('click', acceptFinalProposal);
+    document.getElementById('btn-final-coop').addEventListener('click', acceptFinalProposal);
+
+    document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('btn-toggle-sound').innerText = muted ? '🔇' : '🔊';
+    });
+
+    document.getElementById('btn-open-cine-menu').addEventListener('click', () => {
+      document.getElementById('cine-selector-modal').classList.add('show');
+    });
+
+    document.getElementById('btn-close-cine-menu').addEventListener('click', () => {
+      document.getElementById('cine-selector-modal').classList.remove('show');
+    });
+
+    document.getElementById('btn-reopen-letter').addEventListener('click', () => {
+      document.getElementById('endgame-letter-modal').classList.add('show');
+    });
+
+    document.getElementById('btn-close-letter').addEventListener('click', () => {
+      document.getElementById('endgame-letter-modal').classList.remove('show');
+    });
+
+    requestAnimationFrame(gameLoop);
   </script>
 </body>
 </html>
